@@ -33,13 +33,87 @@ export class App {
   async start() {
     const isRepo = await this.gitService.isRepo();
     if (!isRepo) {
-      console.error(`\x1b[31mError: Path "${this.gitService.repoPath}" is not a Git repository.\x1b[0m`);
-      process.exit(1);
+      this.showInitModal();
+      this.screen.render();
+      return;
     }
 
     await this.refreshGlobalHeader();
     this.switchTab(0);
     this.screen.render();
+  }
+
+  showInitModal() {
+    this.initBox = blessed.box({
+      parent: this.screen,
+      top: 'center',
+      left: 'center',
+      width: 60,
+      height: 11,
+      label: ' {bold}{yellow-fg}Not a Git Repository{/yellow-fg}{/bold} ',
+      tags: true,
+      border: { type: 'line' },
+      style: {
+        border: { fg: 'yellow' },
+        bg: 'black'
+      }
+    });
+
+    blessed.text({
+      parent: this.initBox,
+      top: 1,
+      left: 2,
+      width: 54,
+      tags: true,
+      content: `The folder {cyan-fg}${this.gitService.repoPath}{/cyan-fg} is not a Git repository.\n\nWould you like to initialize a new Git repository here?`
+    });
+
+    const initBtn = blessed.button({
+      parent: this.initBox,
+      top: 6,
+      left: 8,
+      width: 18,
+      height: 1,
+      content: ' [i] Initialize ',
+      align: 'center',
+      style: {
+        bg: 'green',
+        fg: 'black',
+        bold: true,
+        focus: { bg: 'yellow', fg: 'black' }
+      }
+    });
+
+    const quitBtn = blessed.button({
+      parent: this.initBox,
+      top: 6,
+      left: 30,
+      width: 18,
+      height: 1,
+      content: ' [q] Quit ',
+      align: 'center',
+      style: {
+        bg: 'red',
+        fg: 'white',
+        bold: true,
+        focus: { bg: 'yellow', fg: 'black' }
+      }
+    });
+
+    const doInit = async () => {
+      await this.gitService.initRepo();
+      this.initBox.detach();
+      await this.refreshGlobalHeader();
+      this.switchTab(0);
+      this.notify('Initialized new Git repository!');
+      this.screen.render();
+    };
+
+    initBtn.on('press', doInit);
+    quitBtn.on('press', () => process.exit(0));
+
+    this.screen.key(['i'], doInit);
+    initBtn.focus();
   }
 
   initUI() {

@@ -10,7 +10,30 @@ export class GitService {
 
   async isRepo() {
     try {
-      return await this.git.checkIsRepo();
+      const isDirect = await this.git.checkIsRepo();
+      if (isDirect) return true;
+      return await this.findRepoRoot();
+    } catch {
+      return false;
+    }
+  }
+
+  async findRepoRoot() {
+    try {
+      const topLevel = await this.git.revparse(['--show-toplevel']);
+      if (topLevel && topLevel.trim()) {
+        this.repoPath = topLevel.trim();
+        this.git = simpleGit(this.repoPath);
+        return true;
+      }
+    } catch {}
+    return false;
+  }
+
+  async initRepo() {
+    try {
+      await this.git.init();
+      return true;
     } catch {
       return false;
     }
@@ -30,7 +53,6 @@ export class GitService {
       const status = await this.git.status();
       const files = [];
 
-      // Parse status files
       for (const file of status.files) {
         let statusCode = 'M';
         let staged = false;
@@ -82,7 +104,14 @@ export class GitService {
         files
       };
     } catch (err) {
-      throw new Error(`Error fetching status: ${err.message}`);
+      return {
+        currentBranch: 'HEAD',
+        tracking: null,
+        ahead: 0,
+        behind: 0,
+        isClean: true,
+        files: []
+      };
     }
   }
 
