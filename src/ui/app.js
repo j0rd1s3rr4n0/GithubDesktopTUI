@@ -1,10 +1,12 @@
 import blessed from 'blessed';
 import { GitService } from '../git/git-service.js';
+import { GhService } from '../git/gh-service.js';
 import { Header } from './components/header.js';
 import { ChangesView } from './views/changes-view.js';
 import { HistoryView } from './views/history-view.js';
 import { BranchesView } from './views/branches-view.js';
 import { StashView } from './views/stash-view.js';
+import { GithubView } from './views/github-view.js';
 import { HelpModal } from './modals/help-modal.js';
 import { BranchModal } from './modals/branch-modal.js';
 import { StashModal } from './modals/stash-modal.js';
@@ -13,14 +15,16 @@ import { ConfirmModal } from './modals/confirm-modal.js';
 export class App {
   constructor(targetRepoPath = process.cwd()) {
     this.gitService = new GitService(targetRepoPath);
+    this.ghService = new GhService(targetRepoPath);
 
     this.screen = blessed.screen({
       smartCSR: true,
-      title: 'GitHub Desktop TUI - gitu',
+      title: 'GitHub Desktop TUI - gitu / gd',
       fullUnicode: true
     });
 
-    this.activeTab = 0; // 0: Changes, 1: History, 2: Branches, 3: Stash
+    this.activeTab = 0; // 0: Changes, 1: History, 2: Branches, 3: Stash, 4: GitHub
+    this.ghUser = null;
 
     this.initUI();
     this.initEvents();
@@ -70,7 +74,7 @@ export class App {
         fg: 'white',
         bold: true
       },
-      content: ' Press [?] or [F1] for keyboard shortcuts help'
+      content: ' Press [?] or [F1] for keyboard shortcuts help | [5] GitHub CLI'
     });
     this.screen.append(this.notificationBar);
 
@@ -80,7 +84,8 @@ export class App {
       new ChangesView(this.screen, this.gitService, viewOptions),
       new HistoryView(this.screen, this.gitService, viewOptions),
       new BranchesView(this.screen, this.gitService, viewOptions),
-      new StashView(this.screen, this.gitService, viewOptions)
+      new StashView(this.screen, this.gitService, viewOptions),
+      new GithubView(this.screen, this.ghService, viewOptions)
     ];
 
     this.views.forEach(v => {
@@ -122,7 +127,8 @@ export class App {
       '[1] Changes',
       '[2] History',
       '[3] Branches',
-      '[4] Stash'
+      '[4] Stash',
+      '[5] GitHub (gh)'
     ];
 
     const formattedTabs = tabs.map((tab, idx) => {
@@ -150,12 +156,16 @@ export class App {
     try {
       const repoName = await this.gitService.getRepoName();
       const status = await this.gitService.getStatus();
+      const auth = await this.ghService.getAuthStatus();
+
+      this.ghUser = auth.isLoggedIn ? auth.user : null;
+
       this.header.update({
         repoName,
         currentBranch: status.currentBranch,
         ahead: status.ahead,
         behind: status.behind,
-        isClean: status.isClean
+        ghUser: this.ghUser
       });
       this.screen.render();
     } catch {
@@ -183,6 +193,7 @@ export class App {
     this.screen.key(['2'], () => this.switchTab(1));
     this.screen.key(['3'], () => this.switchTab(2));
     this.screen.key(['4'], () => this.switchTab(3));
+    this.screen.key(['5'], () => this.switchTab(4));
 
     this.screen.key(['f1', '?'], () => {
       this.helpModal.toggle();
@@ -191,7 +202,13 @@ export class App {
     this.screen.key(['r'], async () => {
       await this.refreshGlobalHeader();
       this.views[this.activeTab].refresh();
-      this.notify('Refreshed Git status');
+      this.notify('Refreshed Git & GitHub status');
+    });
+
+    this.screen.key(['L', 'l'], async () => {
+      if (this.activeTab !== 0) { // Avoid conflict when typing in commit inputs
+        await this.handleGhAuth();
+      }
     });
 
     this.screen.key(['b', 'n'], () => {
@@ -214,17 +231,25 @@ export class App {
       }
     });
 
-    // Custom Screen Events emitted from child components
+    // Custom Screen Events
     this.screen.on('notify', msg => this.notify(msg));
     this.screen.on('open-branch-modal', () => this.branchModal.show());
     this.screen.on('open-stash-modal', () => this.stashModal.show());
     this.screen.on('execute-push', () => this.executePush());
     this.screen.on('execute-pull', () => this.executePull());
 
-    // Screen resize listener
     this.screen.on('resize', () => {
       this.screen.render();
     });
+  }
+
+  async handleGhAuth() {
+    const auth = await this.ghService.getAuthStatus();
+    if (auth.isLoggedIn) {
+      this.notify(`GitHub Authenticated: @${auth.user} (${auth.host})`);
+    } else {
+      this.notify('Run "gh auth login" in terminal to authenticate GitHub CLI');
+    }
   }
 
   async executePush() {

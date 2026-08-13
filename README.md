@@ -20,25 +20,17 @@
 
 ---
 
-## 🚀 Installation & Setup
+## 🚀 Quick Usage
 
-### Local Run inside project
+Simplemente escribe **`gd`** en la terminal desde **cualquier repositorio Git**:
+
 ```bash
-cd /home/parthenoun/.gemini/antigravity/scratch/git-desktop-tui
-npm install
-npm start
+gd
 ```
 
-### Global CLI Command (`gitu`)
-Link globally using npm:
+O si deseas abrir un repositorio en una ruta específica:
 ```bash
-npm link
-```
-Now you can launch `gitu` in **any Git repository** on your system:
-```bash
-gitu
-# or point to a specific repo path:
-gitu /path/to/my-project
+gd /ruta/a/tu-proyecto-git
 ```
 
 ---

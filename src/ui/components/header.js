@@ -17,7 +17,7 @@ export class Header {
     });
   }
 
-  update({ repoName, currentBranch, ahead = 0, behind = 0, isClean = true }) {
+  update({ repoName, currentBranch, ahead = 0, behind = 0, ghUser = null }) {
     const repoText = `{bold}{white-fg} GitHub Desktop TUI{/white-fg}{/bold} | Repo: {green-fg}${repoName}{/green-fg}`;
     const branchBadge = `{bold}{black-bg}{yellow-fg}  ${currentBranch} {/yellow-fg}{/black-bg}{/bold}`;
     
@@ -28,9 +28,14 @@ export class Header {
       syncText = `{bold}${aheadStr} ${behindStr}{/bold}`.trim();
     }
 
-    const shortcutsText = '{cyan-fg}[F1/?]{/cyan-fg} Help  {cyan-fg}[Tab]{/cyan-fg} Focus  {cyan-fg}[P]{/cyan-fg} Push  {cyan-fg}[p]{/p} Pull  {cyan-fg}[b]{/cyan-fg} Branch  {cyan-fg}[r]{/cyan-fg} Refresh  {cyan-fg}[q]{/cyan-fg} Quit';
+    let ghStatus = '{yellow-fg}GitHub: Not Logged In [L]{/yellow-fg}';
+    if (ghUser) {
+      ghStatus = `{cyan-fg}GitHub: @${ghUser}{/cyan-fg}`;
+    }
 
-    const content = `${repoText}   Branch: ${branchBadge}   Sync: ${syncText}\n${shortcutsText}`;
+    const shortcutsText = '{cyan-fg}[F1/?]{/cyan-fg} Help  {cyan-fg}[1-5]{/cyan-fg} Tabs  {cyan-fg}[P]{/cyan-fg} Push  {cyan-fg}[p]{/cyan-fg} Pull  {cyan-fg}[L]{/cyan-fg} GitHub Auth  {cyan-fg}[r]{/cyan-fg} Refresh  {cyan-fg}[q]{/cyan-fg} Quit';
+
+    const content = `${repoText}   Branch: ${branchBadge}   Sync: ${syncText}   ${ghStatus}\n${shortcutsText}`;
     this.box.setContent(content);
   }
 }
