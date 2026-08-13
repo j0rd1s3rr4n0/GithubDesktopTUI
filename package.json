@@ -1,0 +1,31 @@
+{
+  "name": "git-desktop-tui",
+  "version": "1.0.0",
+  "description": "GitHub Desktop for your terminal - A modern TUI Git client",
+  "main": "src/ui/app.js",
+  "bin": {
+    "gitu": "./bin/gitu.js"
+  },
+  "type": "module",
+  "scripts": {
+    "start": "node bin/gitu.js",
+    "test": "node --check bin/gitu.js"
+  },
+  "keywords": [
+    "git",
+    "tui",
+    "github-desktop",
+    "terminal",
+    "blessed",
+    "cli"
+  ],
+  "author": "Antigravity AI",
+  "license": "MIT",
+  "dependencies": {
+    "blessed": "^0.1.81",
+    "blessed-contrib": "^4.11.0",
+    "chalk": "^5.3.0",
+    "cli-highlight": "^2.1.11",
+    "simple-git": "^3.27.0"
+  }
+}
