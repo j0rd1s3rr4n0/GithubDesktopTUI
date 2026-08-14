@@ -27,7 +27,7 @@ export class AboutView {
       parent: this.container,
       top: 0,
       left: 0,
-      width: '44%',
+      width: '46%',
       height: '100%',
       label: ' {bold}{magenta-fg}👨‍💻 Creator Profile & Live Avatar{/magenta-fg}{/bold} ',
       tags: true,
@@ -40,13 +40,13 @@ export class AboutView {
       scrollbar: { ch: '█', style: { fg: 'magenta' } }
     });
 
-    // Container for ANSI TrueColor Avatar Image
+    // Container for High-Resolution TrueColor Avatar Image
     this.avatarBox = blessed.box({
       parent: this.profileBox,
       top: 1,
       left: 'center',
-      width: 30,
-      height: 8,
+      width: 40,
+      height: 10,
       tags: false,
       align: 'center'
     });
@@ -54,10 +54,10 @@ export class AboutView {
     // Text box for text details below avatar
     this.profileDetailsBox = blessed.box({
       parent: this.profileBox,
-      top: 9,
+      top: 11,
       left: 0,
       width: '100%-2',
-      height: '100%-11',
+      height: '100%-13',
       tags: true
     });
 
@@ -65,8 +65,8 @@ export class AboutView {
     this.infoBox = blessed.box({
       parent: this.container,
       top: 0,
-      left: '44%',
-      width: '56%',
+      left: '46%',
+      width: '54%',
       height: '100%',
       label: ' {bold}{cyan-fg}🐙 Application & Settings{/cyan-fg}{/bold} ',
       tags: true,
@@ -100,7 +100,7 @@ export class AboutView {
       parent: this.profileBox,
       bottom: 1,
       left: 2,
-      width: 32,
+      width: 34,
       height: 1,
       content: ' [r] Sync Profile with GitHub ',
       style: {
@@ -144,12 +144,17 @@ img_path = "${imagePath}"
 if not os.path.exists(img_path):
     sys.exit(1)
 
-img = Image.open(img_path).resize((28, 14)).convert("RGB")
+try:
+    resample = Image.Resampling.LANCZOS
+except AttributeError:
+    resample = Image.LANCZOS
+
+img = Image.open(img_path).resize((36, 18), resample).convert("RGB")
 w, h = img.size
 
 lines = []
 for y in range(0, h, 2):
-    line = ""
+    line = " "
     for x in range(w):
         r1, g1, b1 = img.getpixel((x, y))
         r2, g2, b2 = img.getpixel((x, min(y + 1, h - 1)))
@@ -198,7 +203,7 @@ print("\\n".join(lines))
       await execAsync(`curl -s -L "${avatarUrl}" -o "${AVATAR_CACHE_PATH}"`);
     } catch {}
 
-    // Render TrueColor ANSI Avatar
+    // Render High-Resolution TrueColor ANSI Avatar using Lanczos filter
     let ansiArt = null;
     if (fs.existsSync(AVATAR_CACHE_PATH)) {
       ansiArt = await this.generateAnsiAvatar(AVATAR_CACHE_PATH);
@@ -251,7 +256,7 @@ print("\\n".join(lines))
       `  • {green-fg}4: Stash{/green-fg}       - Stash drawer manager`,
       `  • {green-fg}5: GitHub{/green-fg}      - Pull Requests, Issues & Repositories`,
       `  • {green-fg}6: Repositories{/green-fg}- Unified local & cloned repo switcher`,
-      `  • {green-fg}7: About{/green-fg}       - Live Profile, Image Avatar & i18n`,
+      `  • {green-fg}7: About{/green-fg}       - High-Res Profile Avatar & i18n`,
       '',
       `{bold}{yellow-fg}Active Language:{/yellow-fg}{/bold} {green-fg}${currentLang}{/green-fg}`
     ].join('\n');
