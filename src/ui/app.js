@@ -12,6 +12,7 @@ import { StashView } from './views/stash-view.js';
 import { GithubView } from './views/github-view.js';
 import { ReposView } from './views/repos-view.js';
 import { AboutView } from './views/about-view.js';
+import { AccountView } from './views/account-view.js';
 import { HelpModal } from './modals/help-modal.js';
 import { AboutModal } from './modals/about-modal.js';
 import { BranchModal } from './modals/branch-modal.js';
@@ -34,7 +35,7 @@ export class App {
       fullUnicode: true
     });
 
-    this.activeTab = 0; // 0: Changes, 1: History, 2: Branches, 3: Stash, 4: GitHub, 5: Repositories, 6: About
+    this.activeTab = 0; // 0..7 (8 Tabs Total)
     this.ghUser = null;
 
     this.initUI();
@@ -145,7 +146,7 @@ export class App {
     });
     this.screen.append(this.tabBar);
 
-    // Clickable Interactive Tab Buttons
+    // Clickable Interactive Tab Buttons (8 Tabs)
     this.tabButtons = [];
     this.tabKeys = [
       'tabChanges',
@@ -154,7 +155,8 @@ export class App {
       'tabStash',
       'tabGithub',
       'tabRepos',
-      'tabAbout'
+      'tabAbout',
+      'tabAccount'
     ];
 
     let currentLeft = 1;
@@ -200,7 +202,7 @@ export class App {
     });
     this.screen.append(this.notificationBar);
 
-    // Initialize Views
+    // Initialize 8 Views
     const viewOptions = { top: 6 };
     this.views = [
       new ChangesView(this.screen, this.gitService, viewOptions),
@@ -209,7 +211,8 @@ export class App {
       new StashView(this.screen, this.gitService, viewOptions),
       new GithubView(this.screen, this.ghService, viewOptions),
       new ReposView(this.screen, this, viewOptions),
-      new AboutView(this.screen, this, viewOptions)
+      new AboutView(this.screen, this, viewOptions),
+      new AccountView(this.screen, this, viewOptions)
     ];
 
     this.views.forEach(v => {
@@ -460,13 +463,14 @@ export class App {
     this.screen.key(['5'], () => this.switchTab(4));
     this.screen.key(['6'], () => this.switchTab(5));
     this.screen.key(['7'], () => this.switchTab(6));
+    this.screen.key(['8'], () => this.switchTab(7));
 
     this.screen.key(['C-right', '>'], () => {
-      this.switchTab((this.activeTab + 1) % 7);
+      this.switchTab((this.activeTab + 1) % 8);
     });
 
     this.screen.key(['C-left', '<'], () => {
-      this.switchTab((this.activeTab - 1 + 7) % 7);
+      this.switchTab((this.activeTab - 1 + 8) % 8);
     });
 
     this.screen.key(['f1', '?'], () => {
@@ -504,7 +508,7 @@ export class App {
     });
 
     this.screen.key(['s'], () => {
-      if (!this.hasOpenModal() && this.activeTab !== 0 && this.activeTab !== 3) {
+      if (!this.hasOpenModal() && this.activeTab !== 0 && this.activeTab !== 3 && this.activeTab !== 5) {
         this.stashModal.show();
       }
     });
@@ -514,7 +518,7 @@ export class App {
     });
 
     this.screen.key(['p'], async () => {
-      if (!this.hasOpenModal() && this.activeTab !== 0 && this.activeTab !== 3) {
+      if (!this.hasOpenModal() && this.activeTab !== 0 && this.activeTab !== 3 && this.activeTab !== 5) {
         this.executePull();
       }
     });
@@ -527,7 +531,6 @@ export class App {
     this.screen.on('execute-push', () => this.executePush());
     this.screen.on('execute-pull', () => this.executePull());
 
-    // Fluid responsive layout handler for terminal resize / Ctrl+Scroll Zoom
     this.screen.on('resize', () => {
       this.updateI18nLabels();
       this.refreshGlobalHeader();
@@ -546,6 +549,7 @@ export class App {
 
   executePush() {
     this.notify('Pushing commits to remote origin...');
+    RepoStore.recordPush();
     this.gitService.push().then(() => {
       this.notify('✓ Push completed successfully');
       this.refreshGlobalHeader();
@@ -557,6 +561,7 @@ export class App {
 
   executePull() {
     this.notify('Pulling updates from remote origin...');
+    RepoStore.recordPull();
     this.gitService.pull().then(() => {
       this.notify('✓ Pull completed successfully');
       this.refreshGlobalHeader();

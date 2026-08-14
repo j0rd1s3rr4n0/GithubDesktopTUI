@@ -12,7 +12,7 @@ export class RepoStore {
         return JSON.parse(raw);
       }
     } catch {}
-    return { recentRepos: [], clonedRepos: [] };
+    return { recentRepos: [], clonedRepos: [], totalPushes: 0, totalPulls: 0 };
   }
 
   static save(data) {
@@ -24,14 +24,14 @@ export class RepoStore {
   static addRecent(repoPath) {
     const data = this.load();
     const resolved = path.resolve(repoPath);
-    data.recentRepos = [resolved, ...data.recentRepos.filter(p => p !== resolved)].slice(0, 50);
+    data.recentRepos = [resolved, ...(data.recentRepos || []).filter(p => p !== resolved)].slice(0, 50);
     this.save(data);
   }
 
   static addCloned(repoName, repoPath, repoUrl = '') {
     const data = this.load();
     const resolved = path.resolve(repoPath);
-    const existing = data.clonedRepos.filter(r => r.path !== resolved);
+    const existing = (data.clonedRepos || []).filter(r => r.path !== resolved);
     data.clonedRepos = [
       {
         name: repoName,
@@ -44,13 +44,35 @@ export class RepoStore {
     this.addRecent(resolved);
   }
 
+  static recordPush() {
+    const data = this.load();
+    data.totalPushes = (data.totalPushes || 0) + 1;
+    this.save(data);
+  }
+
+  static recordPull() {
+    const data = this.load();
+    data.totalPulls = (data.totalPulls || 0) + 1;
+    this.save(data);
+  }
+
+  static getStats() {
+    const data = this.load();
+    return {
+      totalPushes: data.totalPushes || 0,
+      totalPulls: data.totalPulls || 0,
+      recentCount: (data.recentRepos || []).length,
+      clonedCount: (data.clonedRepos || []).length
+    };
+  }
+
   static getRecent() {
     const data = this.load();
-    return data.recentRepos.filter(p => fs.existsSync(p));
+    return (data.recentRepos || []).filter(p => fs.existsSync(p));
   }
 
   static getCloned() {
     const data = this.load();
-    return data.clonedRepos.filter(r => fs.existsSync(r.path));
+    return (data.clonedRepos || []).filter(r => fs.existsSync(r.path));
   }
 }
