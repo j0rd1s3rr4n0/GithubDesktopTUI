@@ -1,5 +1,6 @@
 import blessed from 'blessed';
-import { execSync } from 'child_process';
+import { spawnSync, execAsync } from 'child_process';
+import util from 'util';
 
 export class AuthModal {
   constructor(screen, ghService, onAuthChangedCallback) {
@@ -96,17 +97,31 @@ export class AuthModal {
 
   runInteractiveLogin() {
     this.hide();
-    this.screen.leave(); // Temporarily suspend TUI for interactive stdin/stdout gh login
+
+    // 1. Leave blessed screen
+    this.screen.leave();
+
+    // 2. Restore standard canonical terminal input mode for full stdin support (Enter, keys)
+    if (process.stdin.isTTY && process.stdin.setRawMode) {
+      process.stdin.setRawMode(false);
+      process.stdin.resume();
+    }
+    process.stdout.write('\x1b[?25h'); // Ensure cursor is visible
+
     console.clear();
     console.log('\n\x1b[1m\x1b[36m=== GitHub CLI Login (gh auth login) ===\x1b[0m\n');
-    
+
     try {
-      execSync('gh auth login', { stdio: 'inherit' });
+      spawnSync('gh', ['auth', 'login'], { stdio: 'inherit' });
     } catch (err) {
       console.log(`\n\x1b[33mgh auth login completed or cancelled.\x1b[0m\n`);
     }
 
-    this.screen.enter(); // Resume TUI screen
+    // 3. Restore Blessed TUI mode
+    if (process.stdin.isTTY && process.stdin.setRawMode) {
+      process.stdin.setRawMode(true);
+    }
+    this.screen.enter();
     this.screen.render();
     this.show();
     if (this.onAuthChanged) this.onAuthChanged();
