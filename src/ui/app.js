@@ -3,6 +3,7 @@ import path from 'path';
 import { GitService } from '../git/git-service.js';
 import { GhService } from '../git/gh-service.js';
 import { RepoStore } from '../git/repo-store.js';
+import { I18nService } from '../git/i18n-service.js';
 import { Header } from './components/header.js';
 import { ChangesView } from './views/changes-view.js';
 import { HistoryView } from './views/history-view.js';
@@ -50,6 +51,7 @@ export class App {
     RepoStore.addRecent(this.gitService.repoPath);
     await this.refreshGlobalHeader();
     this.switchTab(0);
+    this.updateI18nLabels();
     this.screen.render();
   }
 
@@ -145,18 +147,19 @@ export class App {
 
     // Clickable Interactive Tab Buttons
     this.tabButtons = [];
-    const tabLabels = [
-      '[1] Changes',
-      '[2] History',
-      '[3] Branches',
-      '[4] Stash',
-      '[5] GitHub',
-      '[6] Repositories',
-      '[7] About'
+    this.tabKeys = [
+      'tabChanges',
+      'tabHistory',
+      'tabBranches',
+      'tabStash',
+      'tabGithub',
+      'tabRepos',
+      'tabAbout'
     ];
 
     let currentLeft = 1;
-    tabLabels.forEach((label, idx) => {
+    this.tabKeys.forEach((key, idx) => {
+      const label = I18nService.t(key);
       const btn = blessed.button({
         parent: this.tabBar,
         top: 0,
@@ -193,7 +196,7 @@ export class App {
         fg: 'white',
         bold: true
       },
-      content: ' Click Tabs or press 1-7 | [?] Ayuda | [7] About | [L] Auth | [S-q] Salir'
+      content: I18nService.t('bottomHint')
     });
     this.screen.append(this.notificationBar);
 
@@ -250,6 +253,24 @@ export class App {
     this.updateTabBar();
   }
 
+  updateI18nLabels() {
+    let currentLeft = 1;
+    this.tabButtons.forEach((btn, idx) => {
+      const label = I18nService.t(this.tabKeys[idx]);
+      btn.setContent(` ${label} `);
+      btn.position.left = currentLeft;
+      btn.position.width = label.length + 2;
+      currentLeft += label.length + 2;
+    });
+
+    this.notificationBar.setContent(I18nService.t('bottomHint'));
+    if (this.views[6] && typeof this.views[6].renderInfo === 'function') {
+      this.views[6].renderInfo();
+    }
+    this.updateTabBar();
+    this.screen.render();
+  }
+
   updateTabBar() {
     this.tabButtons.forEach((btn, idx) => {
       if (idx === this.activeTab) {
@@ -301,7 +322,7 @@ export class App {
     this.screen.render();
     if (this.notifyTimeout) clearTimeout(this.notifyTimeout);
     this.notifyTimeout = setTimeout(() => {
-      this.notificationBar.setContent(' Click Tabs or press 1-7 | [?] Ayuda | [7] About | [L] Auth | [S-q] Salir');
+      this.notificationBar.setContent(I18nService.t('bottomHint'));
       this.screen.render();
     }, 4000);
   }
@@ -454,10 +475,16 @@ export class App {
       this.switchTab(6);
     });
 
+    this.screen.key(['f3'], () => {
+      const newLang = I18nService.cycleLanguage();
+      this.notify(`Language changed to: ${newLang.toUpperCase()}`);
+      this.updateI18nLabels();
+    });
+
     this.screen.key(['r'], async () => {
       await this.refreshGlobalHeader();
       this.views[this.activeTab].refresh();
-      this.notify('Refreshed Git & GitHub status');
+      this.notify(I18nService.t('refreshedNotice'));
     });
 
     this.screen.key(['L', 'l'], async () => {
