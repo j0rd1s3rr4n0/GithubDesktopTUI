@@ -373,10 +373,10 @@ export class App {
       process.exit(0);
     });
 
-    // Mouse scroll wheel support (wheelup / wheeldown)
+    // Mouse scroll wheel support (wheelup / wheeldown) - 1 unit line by line
     this.screen.on('element wheelup', (el) => {
       if (el && typeof el.scroll === 'function') {
-        el.scroll(-2);
+        el.scroll(-1);
         this.screen.render();
       } else if (el && typeof el.up === 'function') {
         el.up();
@@ -386,7 +386,7 @@ export class App {
 
     this.screen.on('element wheeldown', (el) => {
       if (el && typeof el.scroll === 'function') {
-        el.scroll(2);
+        el.scroll(1);
         this.screen.render();
       } else if (el && typeof el.down === 'function') {
         el.down();
