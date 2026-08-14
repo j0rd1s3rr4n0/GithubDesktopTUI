@@ -1,99 +1,108 @@
 # 🐙 GitHub Desktop TUI (`gd` / `gitu`)
 
-> A modern, lightning-fast Terminal User Interface (TUI) for Git and GitHub CLI (`gh`), inspired by GitHub Desktop. Built for developers who love the speed of the terminal paired with rich visual ergonomics.
+> **A modern, feature-packed, ultra-fast 8-Tab Terminal User Interface for Git & GitHub CLI.** Inspired by GitHub Desktop, crafted with Node.js, Blessed, and 24-bit TrueColor ANSI rendering.
 
-Developed with ❤️ by [**j0rd1s3rr4n0**](https://github.com/j0rd1s3rr4n0).
-
----
-
-## ✨ Features
-
-- ⚡ **Tab 1: Changes & Staging**: File checklist (`[x]` / `[ ]`), real-time syntax-colored diff preview with line numbers, and commit summary + description panel (`Ctrl+Enter`).
-- 📜 **Tab 2: Commit History**: Interactive timeline of commits with full patch diff inspection.
-- 🌿 **Tab 3: Branch Manager**: Browse local & remote branches, checkout, create new branches (`b`), and execute fast Push (`P`) & Pull (`p`).
-- 📥 **Tab 4: Stash Drawer**: Save, apply, pop, and drop stashes safely.
-- 🐙 **Tab 5: GitHub Integration**: Full integration with GitHub CLI (`gh pr list`, `gh issue list`, `gh repo list`).
-- 📂 **Tab 6: Unified Repositories**: Manage all recent local and cloned GitHub repositories with instant switching and custom folder path opener.
-- ℹ️ **Tab 7: About**: App documentation and developer profile.
-- 🖱️ **Full Mouse & Scroll Wheel Support**: Clickable interactive tab buttons, line-by-line mouse scroll wheel support, and click-to-focus input boxes.
-- 🔐 **Seamless GitHub Authentication**: Built-in interactive browser login (`gh auth login`) with standard terminal raw-mode suspension.
-- 🎯 **Flexible Clone Destination Prompt**: Decide target parent directory (`.` or custom path) with live full-path preview before cloning.
-- 📋 **Full Error Inspector & Logging**: Expandable scrollable error modal for inspecting complete stack traces, logged automatically to `~/.gitu_error.log`.
-- 🛡️ **Universal Escape Safety**: `Esc` / `q` closes active internal windows without quitting the app. Dedicated `Shift+Q` or `Ctrl+C` for exiting.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Node.js](https://img.shields.io/badge/Node.js-18%2B-brightgreen.svg)](https://nodejs.org/)
+[![Creator](https://img.shields.io/badge/Creator-j0rd1s3rr4n0-magenta.svg)](https://github.com/j0rd1s3rr4n0)
+[![Languages](https://img.shields.io/badge/Languages-10%20Supported-blue.svg)](#-10-language-internationalization-f3)
 
 ---
 
-## 🚀 Quick Start
+## ✨ Features & Architecture
+
+`GitHub Desktop TUI` brings the simplicity and productivity of GitHub Desktop directly into your Linux or macOS terminal without any heavy GUI overhead or background daemons.
+
+### 🌟 Key Highlights
+
+* **8 Dedicated Navigation Tabs (`1-8` or Mouse Click)**:
+  1. `[1] Changes`: Interactive staging checklist, strict **1-line / 10-line diff scroll**, single-read textbox guards (eliminating double-typing bugs), `Tab`/`Shift+Tab` field navigation, and draft text preservation.
+  2. `[2] History`: Full commit log timeline with interactive patch details.
+  3. `[3] Branches`: Local & remote branch checkout, new branch creation modal, 1-key Push (`P`) & Pull (`p`).
+  4. `[4] Stash`: Complete Stash drawer manager (Create, Apply, Pop, Drop).
+  5. `[5] GitHub`: Pull Requests, Issues, and Remote Repositories powered by the official GitHub CLI (`gh`).
+  6. `[6] Repositories`: Unified local & cloned repo manager with a **multi-threaded low-resource background system scanner (`s`)** that inspects disk from `/` for `.git` repositories (<10% CPU, <20MB RAM).
+  7. `[7] About`: Live real-time GitHub profile auto-upgrade for developer `@j0rd1s3rr4n0`, featuring a **High-Res 24-bit TrueColor Lanczos ANSI Avatar (`32x32` / `63-column` ratio)** and real-time i18n switcher.
+  8. `[8] My Account`: Authenticated user profile, live avatar, real-time commit counter, **line insertions (`+`)**, **line deletions (`-`)**, net code contributed, push/pull counters, and **1-click personal repository clone**.
+
+* **🌐 10-Language Internationalization (`F3`)**:
+  - Switch languages on-the-fly with `F3` or the language button: **English (`en`, default)**, **Spanish (`es`)**, **Catalan (`ca`)**, **French (`fr`)**, **German (`de`)**, **Czech (`cs`)**, **Russian (`ru`)**, **Chinese (`zh`)**, **Japanese (`ja`)**, and **Hindi (`hi`)**.
+
+* **📋 Universal Path & URL Copying (`y` / `Ctrl+C`)**:
+  - Copy any file path, repository folder path, or GitHub URL directly to your system clipboard (`xclip` / `wl-copy`) with instant notification feedback.
+
+* **🔍 100% Zero-Ghosting Screen Rendering (`fastCSR`)**:
+  - Clean cell invalidation and terminal buffer resets prevent dead text artifacts or residual characters when scrolling or switching tabs/modals.
+
+* **📐 Fluid Terminal Resize & Zoom (`Ctrl + Scroll`)**:
+  - Handles `SIGWINCH` resize events gracefully, dynamically recalculating widget percentages, headers, and tab layouts.
+
+---
+
+## 🚀 Installation & Usage
 
 ### Prerequisites
-- **Node.js** v18 or higher
-- **Git** installed on your system
-- **GitHub CLI (`gh`)** for authentication and remote GitHub features (`gh auth login`)
+- **Node.js**: v18.0.0 or higher
+- **Git**: Installed and available in PATH
+- **GitHub CLI (`gh`)**: Recommended for GitHub tab, PRs, issues, and account features (`gh auth login`)
+- **Python 3 & PIL/Pillow**: Required for High-Definition TrueColor ANSI avatar rendering (`pip install pillow`)
+- **xclip / wl-copy**: Recommended for system clipboard path copying
 
-### Installation
+### Global Command Setup (`gd` / `gitu`)
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/j0rd1s3rr4n0/git-desktop-tui.git
-   cd git-desktop-tui
-   ```
+Clone the repository and link it globally:
 
-2. **Install dependencies**:
-   ```bash
-   npm install
-   ```
+```bash
+git clone https://github.com/j0rd1s3rr4n0/git-desktop-tui.git
+cd git-desktop-tui
+npm install
+npm link --force
+```
 
-3. **Link CLI executable**:
-   ```bash
-   npm link
-   ```
-   *Now you can launch the app from any directory by typing `gd` or `gitu`!*
+Now you can launch the app from **any directory in your terminal**:
 
----
+```bash
+# Launch with alias 'gd'
+gd
 
-## ⌨️ Keyboard Shortcuts & Navigation
-
-| Key | Description |
-|---|---|
-| `1` – `7` | Switch Tabs (1: Changes, 2: History, 3: Branches, 4: Stash, 5: GitHub, 6: Repos, 7: About) |
-| `Ctrl+Tab` / `Ctrl+Right` | Next Tab |
-| `Ctrl+Shift+Tab` / `Ctrl+Left` | Previous Tab |
-| `Space` | Stage / Unstage selected file |
-| `a` / `u` | Stage ALL / Unstage ALL files |
-| `d` | Discard changes in selected file |
-| `c` | Focus Commit Summary input box |
-| `Ctrl+Enter` | Execute Commit (from Summary or Description) |
-| `b` / `n` | Create new branch modal |
-| `P` / `p` | Git Push (`Shift+P`) / Git Pull (`p`) |
-| `s` | Create new stash modal |
-| `o` / `Ctrl+O` | Browse & clone remote GitHub repositories (Profile & Orgs) |
-| `i` | Open Init Git / Clone Dialog |
-| `L` | GitHub Auth / Login status |
-| `r` | Refresh Git & GitHub status |
-| `?` / `F1` | Toggle Keyboard Shortcuts Help Window |
-| `F2` | Open About Window |
-| `Esc` / `q` | Close active window / modal (does not exit app) |
-| `Shift+Q` / `Ctrl+C` | Quit Application |
+# Or launch with 'gitu'
+gitu
+```
 
 ---
 
-## 🛠️ Architecture
+## ⌨️ Keyboard Shortcuts Reference
 
-- **Engine**: Node.js (ES Modules)
-- **TUI Framework**: [`blessed`](https://github.com/chjj/blessed)
-- **Git Provider**: [`simple-git`](https://github.com/steveukx/simple-git)
-- **GitHub CLI Integration**: Official [`gh`](https://cli.github.com/) CLI tool
+| Shortcut | Description |
+| :--- | :--- |
+| `1` - `8` | Switch directly between Tabs 1 to 8 |
+| `Ctrl + Left` / `Ctrl + Right` | Cycle sequentially through tabs |
+| `Tab` / `Shift + Tab` | Move focus between inputs, buttons, and lists |
+| `Esc` / `q` | Close active modal window without quitting app |
+| `Shift + Q` / `Ctrl + C` | Quit application |
+| `y` / `Ctrl + C` (on list items) | Copy selected file path, repo path, or URL to clipboard |
+| `Space` | Toggle stage/unstage file (`Changes` tab) |
+| `a` / `u` | Stage all (`a`) or Unstage all (`u`) files |
+| `c` | Focus commit summary input (`Changes` tab) |
+| `Ctrl + Enter` | Confirm and execute commit (`Changes` tab) |
+| `Up` / `Down` / `j` / `k` | Scroll list or diff preview strictly **1 line per step** |
+| `PageUp` / `PageDown` | Scroll diff preview **10 lines per step** |
+| `g` / `G` | Jump to top (`g`) or bottom (`G`) of diff |
+| `b` / `n` | Open Create New Branch modal |
+| `s` | Open Stash modal / Trigger background system repo scan (`[6] Repos`) |
+| `P` (`Shift+P`) | Push commits to remote origin |
+| `p` | Pull updates from remote origin |
+| `L` | Authenticate or switch GitHub account via `gh auth login` |
+| `Ctrl + O` / `o` | Open Clone Remote Repository & Browse Orgs Modal |
+| `F3` | Toggle between 10 supported languages |
+| `r` | Refresh Git & GitHub status, sync live profile & avatar |
+| `F1` / `?` | Toggle Help & Hotkeys modal |
 
 ---
 
-## 👤 Author
+## 👨‍💻 Creator & License
 
-Developed by **[j0rd1s3rr4n0](https://github.com/j0rd1s3rr4n0)**.
+Developed with ❤️ by **Jordi Serrano (`j0rd1s3rr4n0`)**.
 
-Feel free to open issues or submit pull requests to contribute!
-
----
-
-## 📄 License
-
-[MIT License](LICENSE) © 2026 j0rd1s3rr4n0
+- **GitHub Profile**: [https://github.com/j0rd1s3rr4n0](https://github.com/j0rd1s3rr4n0)
+- **License**: Released under the [MIT License](LICENSE).
