@@ -7,7 +7,7 @@ export class DiffViewer {
       left: options.left || 0,
       width: options.width || '100%',
       height: options.height || '100%',
-      label: options.label || ' {bold}Diff Preview{/bold} ',
+      label: options.label || ' {bold}Diff Preview (↑/↓ 1 line | PgUp/PgDn 10 lines){/bold} ',
       tags: true,
       border: { type: 'line' },
       style: {
@@ -23,6 +23,58 @@ export class DiffViewer {
       keys: true,
       vi: true,
       mouse: true
+    });
+
+    this.setupScrollEvents();
+  }
+
+  setupScrollEvents() {
+    // Mouse Wheel strictly 1 line per tick
+    this.box.on('wheelup', () => {
+      this.box.scroll(-1);
+      this.box.screen.render();
+    });
+
+    this.box.on('wheeldown', () => {
+      this.box.scroll(1);
+      this.box.screen.render();
+    });
+
+    // Keyboard 1 line per keypress
+    this.box.key(['up', 'k'], () => {
+      this.box.scroll(-1);
+      this.box.screen.render();
+    });
+
+    this.box.key(['down', 'j'], () => {
+      this.box.scroll(1);
+      this.box.screen.render();
+    });
+
+    // PageUp / PageDown 10 lines
+    this.box.key(['pageup'], () => {
+      this.box.scroll(-10);
+      this.box.screen.render();
+    });
+
+    this.box.key(['pagedown'], () => {
+      this.box.scroll(10);
+      this.box.screen.render();
+    });
+
+    // Top / Bottom shortcuts
+    this.box.key(['g'], () => {
+      if (typeof this.box.setScroll === 'function') {
+        this.box.setScroll(0);
+        this.box.screen.render();
+      }
+    });
+
+    this.box.key(['S-g'], () => {
+      if (typeof this.box.setScroll === 'function') {
+        this.box.setScroll(this.box.getScrollHeight());
+        this.box.screen.render();
+      }
     });
   }
 
