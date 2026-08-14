@@ -1,9 +1,13 @@
 import blessed from 'blessed';
 import { exec } from 'child_process';
 import util from 'util';
+import path from 'path';
+import os from 'os';
+import fs from 'fs';
 import { I18nService } from '../../git/i18n-service.js';
 
 const execAsync = util.promisify(exec);
+const AVATAR_CACHE_PATH = path.join(os.homedir(), '.gitu_avatar.jpg');
 
 export class AboutView {
   constructor(screen, app, options = {}) {
@@ -25,7 +29,7 @@ export class AboutView {
       left: 0,
       width: '44%',
       height: '100%',
-      label: ' {bold}{magenta-fg}👨‍💻 Live GitHub Profile (Auto-Upgraded){/magenta-fg}{/bold} ',
+      label: ' {bold}{magenta-fg}👨‍💻 Creator Profile & Live Avatar{/magenta-fg}{/bold} ',
       tags: true,
       border: { type: 'line' },
       style: {
@@ -34,6 +38,26 @@ export class AboutView {
       },
       scrollable: true,
       scrollbar: { ch: '█', style: { fg: 'magenta' } }
+    });
+
+    // Container for ANSI image widget
+    this.avatarContainer = blessed.box({
+      parent: this.profileBox,
+      top: 0,
+      left: 'center',
+      width: 24,
+      height: 10,
+      tags: true
+    });
+
+    // Text box for text details below avatar
+    this.profileDetailsBox = blessed.box({
+      parent: this.profileBox,
+      top: 10,
+      left: 0,
+      width: '100%-2',
+      height: '100%-12',
+      tags: true
     });
 
     // Right Column: App Info, Features & Language Selector
@@ -103,7 +127,7 @@ export class AboutView {
 
     const refreshProfile = () => {
       this.loadProfile();
-      this.app.notify('Synced live GitHub profile for @j0rd1s3rr4n0');
+      this.app.notify('Synced live GitHub profile & avatar for @j0rd1s3rr4n0');
     };
 
     this.refreshBtn.on('press', refreshProfile);
@@ -111,7 +135,7 @@ export class AboutView {
   }
 
   async loadProfile() {
-    this.profileBox.setContent('{cyan-fg}Syncing live GitHub profile (@j0rd1s3rr4n0)...{/cyan-fg}');
+    this.profileDetailsBox.setContent('{cyan-fg}Syncing live GitHub profile & avatar (@j0rd1s3rr4n0)...{/cyan-fg}');
     this.screen.render();
 
     let userObj = null;
@@ -128,23 +152,42 @@ export class AboutView {
         location: 'Barcelona',
         blog: 'jordiserrano.me',
         html_url: 'https://github.com/j0rd1s3rr4n0',
+        avatar_url: 'https://avatars.githubusercontent.com/u/44474715?v=4',
         public_repos: 100,
         followers: 204,
         following: 489
       };
     }
 
-    const avatarArt = [
-      '{magenta-fg}   ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄   {/magenta-fg}',
-      '{magenta-fg}  █ {bold}🐙  j0rd1s3rr4n0  {/bold} █  {/magenta-fg}',
-      '{magenta-fg}  █  Ethical Hacker    █  {/magenta-fg}',
-      '{magenta-fg}  █  & Threat Hunter   █  {/magenta-fg}',
-      '{magenta-fg}   ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀   {/magenta-fg}'
-    ].join('\n');
+    // Try downloading avatar image for ANSI rendering
+    try {
+      const avatarUrl = userObj.avatar_url || 'https://avatars.githubusercontent.com/u/44474715?v=4';
+      await execAsync(`curl -s -L "${avatarUrl}" -o "${AVATAR_CACHE_PATH}"`);
+    } catch {}
+
+    // Render ANSI avatar image if file exists
+    if (fs.existsSync(AVATAR_CACHE_PATH)) {
+      try {
+        if (this.avatarImageWidget) {
+          this.avatarImageWidget.destroy();
+        }
+        this.avatarImageWidget = blessed.ansiimage({
+          parent: this.avatarContainer,
+          top: 0,
+          left: 'center',
+          width: 22,
+          height: 10,
+          file: AVATAR_CACHE_PATH,
+          animate: false
+        });
+      } catch {
+        this.avatarContainer.setContent('{magenta-fg}🐙 j0rd1s3rr4n0 Avatar{/magenta-fg}');
+      }
+    } else {
+      this.avatarContainer.setContent('{magenta-fg}🐙 j0rd1s3rr4n0 Avatar{/magenta-fg}');
+    }
 
     const profileContent = [
-      avatarArt,
-      '',
       `{bold}{yellow-fg}Name:{/yellow-fg}{/bold}      ${userObj.name || 'Jordi Serrano'}`,
       `{bold}{yellow-fg}Username:{/yellow-fg}{/bold}  @${userObj.login}`,
       `{bold}{yellow-fg}Location:{/yellow-fg}{/bold}  ${userObj.location || 'Barcelona'}`,
@@ -160,7 +203,7 @@ export class AboutView {
       `  • {green-fg}Following:{/green-fg}           ${userObj.following}`
     ].join('\n');
 
-    this.profileBox.setContent(profileContent);
+    this.profileDetailsBox.setContent(profileContent);
     this.renderInfo();
   }
 
@@ -185,7 +228,7 @@ export class AboutView {
       `  • {green-fg}4: Stash{/green-fg}       - Stash drawer manager`,
       `  • {green-fg}5: GitHub{/green-fg}      - Pull Requests, Issues & Repositories`,
       `  • {green-fg}6: Repositories{/green-fg}- Unified local & cloned repo switcher`,
-      `  • {green-fg}7: About{/green-fg}       - Live Profile & Multi-language settings`,
+      `  • {green-fg}7: About{/green-fg}       - Live Profile, Image Avatar & i18n`,
       '',
       `{bold}{yellow-fg}Active Language:{/yellow-fg}{/bold} {green-fg}${currentLang}{/green-fg}`
     ].join('\n');
