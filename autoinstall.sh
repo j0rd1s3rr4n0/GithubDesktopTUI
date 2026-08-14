@@ -231,32 +231,35 @@ cd "$SCRIPT_DIR"
 
 npm install --quiet
 
-echo -e "${BLUE}  --> Linking global commands 'gd' and 'gitu'...${NC}"
+echo -e "${BLUE}  --> Linking global commands 'gd', 'gitu', and 'ghtui'...${NC}"
 $SUDO_CMD npm link --force || npm link --force
 
 # Verify global command setup
 mkdir -p "$HOME/.local/bin"
 if [ -f "$HOME/.local/bin/gd" ] || command -v gd >/dev/null 2>&1; then
-    echo -e "${GREEN}✓ Global CLI commands 'gd' and 'gitu' linked successfully!${NC}"
+    echo -e "${GREEN}✓ Global CLI commands 'gd', 'gitu', and 'ghtui' linked successfully!${NC}"
 else
-    # Fallback symlink to ~/.local/bin/gd
-    ln -sf "$SCRIPT_DIR/src/index.js" "$HOME/.local/bin/gd"
-    ln -sf "$SCRIPT_DIR/src/index.js" "$HOME/.local/bin/gitu"
-    chmod +x "$HOME/.local/bin/gd" "$HOME/.local/bin/gitu"
-    echo -e "${GREEN}✓ Created fallback symlinks in $HOME/.local/bin/gd and gitu${NC}"
+    # Fallback symlink to ~/.local/bin
+    ln -sf "$SCRIPT_DIR/bin/gitu.js" "$HOME/.local/bin/gd"
+    ln -sf "$SCRIPT_DIR/bin/gitu.js" "$HOME/.local/bin/gitu"
+    ln -sf "$SCRIPT_DIR/bin/gitu.js" "$HOME/.local/bin/ghtui"
+    chmod +x "$HOME/.local/bin/gd" "$HOME/.local/bin/gitu" "$HOME/.local/bin/ghtui"
+    echo -e "${GREEN}✓ Created fallback symlinks in $HOME/.local/bin/ (gd, gitu, ghtui)${NC}"
 fi
 
 # Final Success Message
 echo ""
 echo -e "${GREEN}${BOLD}======================================================================${NC}"
-echo -e "${GREEN}${BOLD}🎉 SUCCESS! GitHub Desktop TUI (gd) is successfully installed!${NC}"
+echo -e "${GREEN}${BOLD}🎉 SUCCESS! GitHub Desktop TUI is successfully installed!${NC}"
 echo -e "${GREEN}${BOLD}======================================================================${NC}"
 echo ""
 echo -e "${BOLD}How to run:${NC}"
-echo -e "  Type ${CYAN}${BOLD}gd${NC} or ${CYAN}${BOLD}gitu${NC} in any terminal directory:"
+echo -e "  Type ${CYAN}${BOLD}gd${NC} or ${CYAN}${BOLD}ghtui${NC} in any terminal directory:"
 echo ""
-echo -e "     ${GREEN}${BOLD}gd${NC}"
+echo -e "     ${GREEN}${BOLD}gd${NC}     ${YELLOW}(short alias)${NC}"
+echo -e "     ${GREEN}${BOLD}ghtui${NC}  ${YELLOW}(full name)${NC}"
 echo ""
 echo -e "${YELLOW}Enjoying GitHub Desktop TUI? Star the repo on GitHub!${NC}"
 echo -e "👉 ${CYAN}${BOLD}${REPO_URL}${NC}"
 echo ""
+
