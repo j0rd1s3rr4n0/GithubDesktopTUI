@@ -25,8 +25,10 @@ export class HelpModal {
 
     const helpContent = [
       '{yellow-fg}{bold}Navigation & Repositories{/bold}{/yellow-fg}',
-      '  {cyan-fg}1 - 5{/cyan-fg}        Switch Tab (1: Changes, 2: History, 3: Branches, 4: Stash, 5: GitHub)',
-      '  {cyan-fg}o / Ctrl+O{/cyan-fg}   Browse & Clone Remote GitHub Repositories (Profile & Orgs)',
+      '  {cyan-fg}1 - 7{/cyan-fg}        Switch Tab (1: Changes, 2: History, 3: Branches, 4: Stash, 5: GitHub, 6: Local Repos, 7: Cloned Repos)',
+      '  {cyan-fg}6{/cyan-fg}            Repository Changer / Open any local directory path',
+      '  {cyan-fg}7{/cyan-fg}            Cloned Repositories Drawer / Jump directly to cloned repos',
+      '  {cyan-fg}o / Ctrl+O{/cyan-fg}   Browse & Clone Remote Repositories (Profile & Orgs)',
       '  {cyan-fg}i{/cyan-fg}            Open Init Git / Clone Dialog',
       '  {cyan-fg}Tab / S-Tab{/cyan-fg}  Switch focus between panels',
       '  {cyan-fg}j / k / Up / Down{/cyan-fg} Navigate items in list / scroll diff',

@@ -1,12 +1,16 @@
 import blessed from 'blessed';
+import path from 'path';
 import { GitService } from '../git/git-service.js';
 import { GhService } from '../git/gh-service.js';
+import { RepoStore } from '../git/repo-store.js';
 import { Header } from './components/header.js';
 import { ChangesView } from './views/changes-view.js';
 import { HistoryView } from './views/history-view.js';
 import { BranchesView } from './views/branches-view.js';
 import { StashView } from './views/stash-view.js';
 import { GithubView } from './views/github-view.js';
+import { RepoChangerView } from './views/repo-changer-view.js';
+import { ClonedReposView } from './views/cloned-repos-view.js';
 import { HelpModal } from './modals/help-modal.js';
 import { BranchModal } from './modals/branch-modal.js';
 import { StashModal } from './modals/stash-modal.js';
@@ -27,7 +31,7 @@ export class App {
       fullUnicode: true
     });
 
-    this.activeTab = 0; // 0: Changes, 1: History, 2: Branches, 3: Stash, 4: GitHub
+    this.activeTab = 0; // 0: Changes, 1: History, 2: Branches, 3: Stash, 4: GitHub, 5: Local Repos, 6: Cloned Repos
     this.ghUser = null;
 
     this.initUI();
@@ -41,28 +45,50 @@ export class App {
       return;
     }
 
+    RepoStore.addRecent(this.gitService.repoPath);
     await this.refreshGlobalHeader();
     this.switchTab(0);
     this.screen.render();
   }
 
+  async switchRepositoryPath(newPath) {
+    try {
+      const resolvedPath = path.resolve(newPath);
+      const tempGit = new GitService(resolvedPath);
+      const isRepo = await tempGit.isRepo();
+
+      if (!isRepo) {
+        this.errorModal.showError('Invalid Git Repository', `Path "${resolvedPath}" is not a Git repository.`);
+        return;
+      }
+
+      this.gitService = tempGit;
+      this.ghService = new GhService(resolvedPath);
+
+      this.views[0].gitService = this.gitService;
+      this.views[1].gitService = this.gitService;
+      this.views[2].gitService = this.gitService;
+      this.views[3].gitService = this.gitService;
+      this.views[4].ghService = this.ghService;
+
+      RepoStore.addRecent(resolvedPath);
+      await this.refreshGlobalHeader();
+      this.switchTab(0);
+      this.notify(`Switched repository to: ${path.basename(resolvedPath)}`);
+    } catch (err) {
+      this.errorModal.showError('Switch Repository Failed', err);
+    }
+  }
+
   showInitModal() {
     if (!this.initModal) {
       this.initModal = new InitModal(this.screen, this.gitService, this.ghService, async (action, clonedPath) => {
+        const targetPath = clonedPath || this.gitService.repoPath;
         if (clonedPath) {
-          this.gitService = new GitService(clonedPath);
-          this.ghService = new GhService(clonedPath);
-          this.views[0].gitService = this.gitService;
-          this.views[1].gitService = this.gitService;
-          this.views[2].gitService = this.gitService;
-          this.views[3].gitService = this.gitService;
-          this.views[4].ghService = this.ghService;
+          const repoName = path.basename(clonedPath);
+          RepoStore.addCloned(repoName, clonedPath);
         }
-
-        await this.refreshGlobalHeader();
-        this.switchTab(0);
-        this.notify(action === 'cloned' ? 'Repository cloned successfully!' : 'Initialized new Git repository!');
-        this.screen.render();
+        await this.switchRepositoryPath(targetPath);
       });
     }
     this.initModal.show();
@@ -75,16 +101,10 @@ export class App {
         const res = await this.ghService.cloneRepo(repoTarget, this.gitService.repoPath);
         if (res.success) {
           if (res.clonedPath) {
-            this.gitService = new GitService(res.clonedPath);
-            this.ghService = new GhService(res.clonedPath);
-            this.views[0].gitService = this.gitService;
-            this.views[1].gitService = this.gitService;
-            this.views[2].gitService = this.gitService;
-            this.views[3].gitService = this.gitService;
-            this.views[4].ghService = this.ghService;
+            const repoName = path.basename(res.clonedPath);
+            RepoStore.addCloned(repoName, res.clonedPath, repoTarget);
+            await this.switchRepositoryPath(res.clonedPath);
           }
-          await this.refreshGlobalHeader();
-          this.switchTab(0);
           this.notify('Repository cloned successfully!');
         } else {
           this.errorModal.showError('Clone Repository Failed', res.error);
@@ -126,7 +146,7 @@ export class App {
         fg: 'white',
         bold: true
       },
-      content: ' Press [?] Help | [o] Clone/Browse | [L] GitHub Auth | [S-q] Quit App'
+      content: ' Press [?] Help | [6] Local Repos | [7] Cloned Repos | [S-q] Quit App'
     });
     this.screen.append(this.notificationBar);
 
@@ -137,7 +157,9 @@ export class App {
       new HistoryView(this.screen, this.gitService, viewOptions),
       new BranchesView(this.screen, this.gitService, viewOptions),
       new StashView(this.screen, this.gitService, viewOptions),
-      new GithubView(this.screen, this.ghService, viewOptions)
+      new GithubView(this.screen, this.ghService, viewOptions),
+      new RepoChangerView(this.screen, this, viewOptions),
+      new ClonedReposView(this.screen, this, viewOptions)
     ];
 
     this.views.forEach(v => {
@@ -186,7 +208,9 @@ export class App {
       '[2] History',
       '[3] Branches',
       '[4] Stash',
-      '[5] GitHub (gh)'
+      '[5] GitHub',
+      '[6] Local Repos',
+      '[7] Cloned Repos'
     ];
 
     const formattedTabs = tabs.map((tab, idx) => {
@@ -196,7 +220,7 @@ export class App {
       return `{gray-fg} ${tab} {/gray-fg}`;
     });
 
-    this.tabBar.setContent(` Tabs:  ${formattedTabs.join('  |  ')}`);
+    this.tabBar.setContent(` Tabs: ${formattedTabs.join(' | ')}`);
     this.screen.render();
   }
 
@@ -236,7 +260,7 @@ export class App {
     this.screen.render();
     if (this.notifyTimeout) clearTimeout(this.notifyTimeout);
     this.notifyTimeout = setTimeout(() => {
-      this.notificationBar.setContent(' Press [?] Help | [o] Clone/Browse | [L] GitHub Auth | [S-q] Quit App');
+      this.notificationBar.setContent(' Press [?] Help | [6] Local Repos | [7] Cloned Repos | [S-q] Quit App');
       this.screen.render();
     }, 4000);
   }
@@ -338,6 +362,8 @@ export class App {
     this.screen.key(['3'], () => this.switchTab(2));
     this.screen.key(['4'], () => this.switchTab(3));
     this.screen.key(['5'], () => this.switchTab(4));
+    this.screen.key(['6'], () => this.switchTab(5));
+    this.screen.key(['7'], () => this.switchTab(6));
 
     this.screen.key(['f1', '?'], () => {
       this.helpModal.toggle();
