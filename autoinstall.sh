@@ -172,7 +172,7 @@ if [ "$NODE_VER" -lt 18 ]; then
     echo -e "${YELLOW}⚠️  Node.js is missing or version < 18 (Detected v${NODE_VER}). Installing Node.js v20 LTS...${NC}"
     if command -v curl >/dev/null 2>&1; then
         if [ "$PKG_MANAGER" = "apt" ]; then
-            curl -fsSL https://deb.nodesource.com/setup_20.x | $SUDO_CMD -E bash -
+            curl -fsSL https://deb.nodesource.com/setup_20.x | ${SUDO_CMD:+$SUDO_CMD -E} bash -
             $SUDO_CMD apt-get install -y nodejs
         elif [ "$PKG_MANAGER" = "dnf" ] || [ "$PKG_MANAGER" = "yum" ]; then
             curl -fsSL https://rpm.nodesource.com/setup_20.x | $SUDO_CMD bash -

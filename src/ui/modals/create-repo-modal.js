@@ -169,8 +169,8 @@ export class CreateRepoModal {
     } catch {}
 
     this.nameInput.setValue(defaultName);
-    this.publicRadio.setChecked(true);
-    this.privateRadio.setChecked(false);
+    this.publicRadio.check();
+    this.privateRadio.uncheck();
 
     this.screen.append(this.box);
     this.box.setFront();
