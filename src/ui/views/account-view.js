@@ -28,7 +28,7 @@ export class AccountView {
       parent: this.container,
       top: 0,
       left: 0,
-      width: '46%',
+      width: '44%',
       height: '100%',
       label: ` {bold}{magenta-fg}${I18nService.t('tabAccount') || '[8] My Account'}{/magenta-fg}{/bold} `,
       tags: true,
@@ -61,14 +61,14 @@ export class AccountView {
       tags: true
     });
 
-    // Right Column: Code & Git Activity Statistics
+    // Right Column Top: Code & Activity Statistics
     this.statsBox = blessed.box({
       parent: this.container,
       top: 0,
-      left: '46%',
-      width: '54%',
-      height: '100%',
-      label: ' {bold}{cyan-fg}📊 Code & Activity Statistics{/cyan-fg}{/bold} ',
+      left: '44%',
+      width: '56%',
+      height: '50%',
+      label: ' {bold}{cyan-fg}📊 Code Statistics & Activity Log{/cyan-fg}{/bold} ',
       tags: true,
       border: { type: 'line' },
       style: {
@@ -79,13 +79,35 @@ export class AccountView {
       scrollbar: { ch: '█', style: { fg: 'cyan' } }
     });
 
+    // Right Column Bottom: Interactive Personal Repos & Starred Repos List
+    this.userReposList = blessed.list({
+      parent: this.container,
+      top: '50%',
+      left: '44%',
+      width: '56%',
+      height: '50%',
+      label: ' {bold}{yellow-fg}🌐 My GitHub Repositories (Select & Enter to Clone/Open){/yellow-fg}{/bold} ',
+      tags: true,
+      border: { type: 'line' },
+      style: {
+        border: { fg: 'yellow' },
+        selected: { bg: 'blue', fg: 'white', bold: true },
+        focus: { border: { fg: 'green' } }
+      },
+      keys: true,
+      vi: true,
+      mouse: true,
+      scrollable: true,
+      scrollbar: { ch: '█', style: { fg: 'yellow' } }
+    });
+
     this.loginBtn = blessed.button({
       parent: this.profileBox,
       bottom: 1,
       left: 2,
       width: 32,
       height: 1,
-      content: ' [L] Authenticate with GitHub ',
+      content: ' [L] Authenticate / Switch ',
       style: {
         bg: 'blue',
         fg: 'white',
@@ -96,23 +118,7 @@ export class AccountView {
       keys: true
     });
 
-    this.refreshBtn = blessed.button({
-      parent: this.statsBox,
-      bottom: 1,
-      left: 2,
-      width: 32,
-      height: 1,
-      content: ' [r] Refresh Account Stats ',
-      style: {
-        bg: 'green',
-        fg: 'black',
-        bold: true,
-        focus: { bg: 'yellow', fg: 'black' }
-      },
-      mouse: true,
-      keys: true
-    });
-
+    this.userRepos = [];
     this.setupEvents();
   }
 
@@ -125,8 +131,22 @@ export class AccountView {
     this.loginBtn.on('press', () => this.app.handleGhAuthDirect());
     this.loginBtn.on('click', () => this.app.handleGhAuthDirect());
 
-    this.refreshBtn.on('press', () => this.refresh());
-    this.refreshBtn.on('click', () => this.refresh());
+    this.userReposList.on('select item', (item, index) => {
+      if (this.userRepos && this.userRepos[index]) {
+        const repo = this.userRepos[index];
+        this.app.notify(`Selected repo: ${repo.nameWithOwner} (${repo.stargazerCount || 0} ★)`);
+      }
+    });
+
+    this.userReposList.key(['enter'], () => {
+      const idx = this.userReposList.selected;
+      if (this.userRepos && this.userRepos[idx]) {
+        const repo = this.userRepos[idx];
+        if (this.app.cloneDestModal) {
+          this.app.cloneDestModal.prompt(repo.nameWithOwner, this.app.gitService.repoPath);
+        }
+      }
+    });
   }
 
   generateAnsiAvatarSync(imagePath) {
@@ -200,16 +220,22 @@ print("\\n".join(lines))
 
   async refresh() {
     this.updateI18nLabels();
-    this.profileDetailsBox.setContent('{cyan-fg}Loading user account & code stats...{/cyan-fg}');
+    this.profileDetailsBox.setContent('{cyan-fg}Loading GitHub account API data & statistics...{/cyan-fg}');
     this.screen.render();
 
     const auth = await this.app.ghService.getAuthStatus();
     let userObj = null;
+    let userOrgs = [];
 
     if (auth.isLoggedIn) {
       try {
         const { stdout } = await execAsync('gh api user');
         userObj = JSON.parse(stdout);
+      } catch {}
+
+      try {
+        const { stdout: orgsOut } = await execAsync('gh api user/orgs');
+        userOrgs = JSON.parse(orgsOut);
       } catch {}
     }
 
@@ -219,8 +245,9 @@ print("\\n".join(lines))
         '{yellow-fg}{bold}Status:{/bold} Not Logged In{/yellow-fg}',
         '',
         'Press {cyan-fg}[L]{/cyan-fg} or click the button below to authenticate with GitHub CLI.',
-        'Once logged in, your profile, metrics, avatar, and PRs will sync automatically.'
+        'Once logged in, your full GitHub API metrics, organizations, avatar, and personal repos will load automatically.'
       ].join('\n'));
+      this.userReposList.setItems(['{yellow-fg}Press [L] to authenticate with GitHub CLI{/yellow-fg}']);
     } else {
       try {
         if (userObj.avatar_url) {
@@ -239,29 +266,55 @@ print("\\n".join(lines))
         this.avatarBox.setContent(`\x1b[35m  🐙 @${userObj.login} Avatar  \x1b[0m`);
       }
 
+      const orgsStr = userOrgs.length ? userOrgs.map(o => `{magenta-fg}@${o.login}{/magenta-fg}`).join(', ') : '{gray-fg}None{/gray-fg}';
+
       const profileContent = [
         `{bold}{yellow-fg}Username:{/yellow-fg}{/bold}  @${userObj.login}`,
         `{bold}{yellow-fg}Name:{/yellow-fg}{/bold}      ${userObj.name || 'N/A'}`,
+        `{bold}{yellow-fg}Company:{/yellow-fg}{/bold}   ${userObj.company || 'N/A'}`,
         `{bold}{yellow-fg}Location:{/yellow-fg}{/bold}  ${userObj.location || 'N/A'}`,
+        `{bold}{yellow-fg}Email:{/yellow-fg}{/bold}     ${userObj.email || 'N/A'}`,
         `{bold}{yellow-fg}Website:{/yellow-fg}{/bold}   ${userObj.blog || 'N/A'}`,
+        `{bold}{yellow-fg}Twitter/X:{/yellow-fg}{/bold} @${userObj.twitter_username || 'N/A'}`,
+        `{bold}{yellow-fg}Hireable:{/yellow-fg}{/bold}  ${userObj.hireable ? '{green-fg}Yes ✓{/green-fg}' : 'No'}`,
         `{bold}{yellow-fg}GitHub:{/yellow-fg}{/bold}    {cyan-fg}${userObj.html_url}{/cyan-fg}`,
         '',
         `{bold}{yellow-fg}Bio:{/yellow-fg}{/bold}`,
         `  "${userObj.bio || 'No bio provided'}"`,
         '',
-        `{bold}{yellow-fg}GitHub Account Metrics:{/yellow-fg}{/bold}`,
+        `{bold}{yellow-fg}GitHub Organizations:{/yellow-fg}{/bold}`,
+        `  ${orgsStr}`,
+        '',
+        `{bold}{yellow-fg}GitHub Account API Metrics:{/yellow-fg}{/bold}`,
         `  • {green-fg}Public Repositories:{/green-fg} ${userObj.public_repos}`,
+        `  • {green-fg}Public Gists:{/green-fg}        ${userObj.public_gists || 0}`,
         `  • {green-fg}Followers:{/green-fg}           ${userObj.followers}`,
-        `  • {green-fg}Following:{/green-fg}           ${userObj.following}`
+        `  • {green-fg}Following:{/green-fg}           ${userObj.following}`,
+        `  • {green-fg}Account Created:{/green-fg}     ${(userObj.created_at || '').slice(0, 10)}`
       ].join('\n');
 
       this.profileDetailsBox.setContent(profileContent);
+
+      // Fetch personal repositories via GitHub API
+      try {
+        const repos = await this.app.ghService.getUserRepos();
+        this.userRepos = repos;
+        const items = repos.map(r => {
+          const vis = r.isPrivate ? '{magenta-fg}🔒 Private{/magenta-fg}' : '{green-fg}🌐 Public{/green-fg}';
+          const lang = r.primaryLanguage && r.primaryLanguage.name ? `{yellow-fg}[${r.primaryLanguage.name}]{/yellow-fg} ` : '';
+          return `${vis} ${lang}{bold}${r.nameWithOwner}{/bold} {yellow-fg}★ ${r.stargazerCount || 0}{/yellow-fg}`;
+        });
+        this.userReposList.setItems(items.length ? items : ['{gray-fg}No personal repositories found{/gray-fg}']);
+      } catch {
+        this.userReposList.setItems(['{red-fg}Failed to fetch user repositories via GitHub API{/red-fg}']);
+      }
     }
 
+    // Load Code & Git Activity Stats
     const gitStats = await this.fetchGitCodeStats();
     const appStats = RepoStore.getStats();
     const netLines = gitStats.addedLines - gitStats.deletedLines;
-    const netFormatted = netLines >= 0 ? `{green-fg}+${netLines}{/green-fg}` : `{red-fg}${netLines}{/red-fg}`;
+    const netFormatted = netLines >= 0 ? `{green-fg}+${netLines.toLocaleString()}{/green-fg}` : `{red-fg}${netLines.toLocaleString()}{/red-fg}`;
 
     const statsContent = [
       '{bold}{yellow-fg}📈 Repository Code Statistics:{/yellow-fg}{/bold}',
