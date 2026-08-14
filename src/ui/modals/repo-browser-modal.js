@@ -116,6 +116,9 @@ export class RepoBrowserModal {
     this.box.setFront();
     this.box.show();
     this.ownerList.focus();
+
+    if (this.screen.program) this.screen.program.clear();
+    if (typeof this.screen.alloc === 'function') this.screen.alloc();
     this.screen.render();
 
     const auth = await this.ghService.getAuthStatus();
@@ -162,6 +165,8 @@ export class RepoBrowserModal {
 
   hide() {
     this.box.hide();
+    if (this.screen.program) this.screen.program.clear();
+    if (typeof this.screen.alloc === 'function') this.screen.alloc();
     this.screen.render();
   }
 }

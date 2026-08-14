@@ -374,48 +374,46 @@ export class App {
   }
 
   closeTopModal() {
+    let closed = false;
     if (this.cloneDestModal && this.cloneDestModal.box && this.cloneDestModal.box.visible) {
       this.cloneDestModal.hide();
-      return true;
-    }
-    if (this.aboutModal && this.aboutModal.modal && this.aboutModal.modal.visible) {
+      closed = true;
+    } else if (this.aboutModal && this.aboutModal.modal && this.aboutModal.modal.visible) {
       this.aboutModal.hide();
-      return true;
-    }
-    if (this.errorModal && this.errorModal.box && this.errorModal.box.visible) {
+      closed = true;
+    } else if (this.errorModal && this.errorModal.box && this.errorModal.box.visible) {
       this.errorModal.hide();
-      return true;
-    }
-    if (this.repoBrowserModal && this.repoBrowserModal.box && this.repoBrowserModal.box.visible) {
+      closed = true;
+    } else if (this.repoBrowserModal && this.repoBrowserModal.box && this.repoBrowserModal.box.visible) {
       this.repoBrowserModal.hide();
-      return true;
-    }
-    if (this.initModal && this.initModal.repoBrowserModal && this.initModal.repoBrowserModal.box && this.initModal.repoBrowserModal.box.visible) {
+      closed = true;
+    } else if (this.initModal && this.initModal.repoBrowserModal && this.initModal.repoBrowserModal.box && this.initModal.repoBrowserModal.box.visible) {
       this.initModal.repoBrowserModal.hide();
-      return true;
-    }
-    if (this.helpModal && this.helpModal.modal && this.helpModal.modal.visible) {
+      closed = true;
+    } else if (this.helpModal && this.helpModal.modal && this.helpModal.modal.visible) {
       this.helpModal.hide();
-      return true;
-    }
-    if (this.authModal && this.authModal.box && this.authModal.box.visible) {
+      closed = true;
+    } else if (this.authModal && this.authModal.box && this.authModal.box.visible) {
       this.authModal.hide();
-      return true;
-    }
-    if (this.branchModal && this.branchModal.form && this.branchModal.form.visible) {
+      closed = true;
+    } else if (this.branchModal && this.branchModal.form && this.branchModal.form.visible) {
       this.branchModal.hide();
-      return true;
-    }
-    if (this.stashModal && this.stashModal.form && this.stashModal.form.visible) {
+      closed = true;
+    } else if (this.stashModal && this.stashModal.form && this.stashModal.form.visible) {
       this.stashModal.hide();
-      return true;
-    }
-    if (this.confirmModal && this.confirmModal.box && this.confirmModal.box.visible) {
+      closed = true;
+    } else if (this.confirmModal && this.confirmModal.box && this.confirmModal.box.visible) {
       this.confirmModal.hide();
-      return true;
-    }
-    if (this.initModal && this.initModal.box && this.initModal.box.visible) {
+      closed = true;
+    } else if (this.initModal && this.initModal.box && this.initModal.box.visible) {
       this.initModal.hide();
+      closed = true;
+    }
+
+    if (closed) {
+      if (this.screen.program) this.screen.program.clear();
+      if (typeof this.screen.alloc === 'function') this.screen.alloc();
+      this.screen.render();
       return true;
     }
     return false;
