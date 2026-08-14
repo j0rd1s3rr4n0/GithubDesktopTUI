@@ -136,6 +136,10 @@ export class ChangesView {
 
     this.filesData = [];
 
+    // Store draft text so Esc never clears input
+    this.summaryDraft = '';
+    this.descDraft = '';
+
     // Bindings
     this.setupEvents();
   }
@@ -156,6 +160,57 @@ export class ChangesView {
       if (!this.descInput._reading) {
         this.descInput.readInput();
       }
+    });
+
+    // Keep draft text saved continuously
+    this.summaryInput.on('keypress', () => {
+      this.summaryDraft = this.summaryInput.getValue();
+    });
+
+    this.descInput.on('keypress', () => {
+      this.descDraft = this.descInput.getValue();
+    });
+
+    // On cancel / Esc: restore draft text and return to fileList
+    this.summaryInput.on('cancel', () => {
+      this.summaryInput.setValue(this.summaryDraft || this.summaryInput.getValue());
+      this.fileList.focus();
+      this.screen.render();
+    });
+
+    this.descInput.on('cancel', () => {
+      this.descInput.setValue(this.descDraft || this.descInput.getValue());
+      this.fileList.focus();
+      this.screen.render();
+    });
+
+    // Tab / Shift+Tab Navigation between controls
+    this.summaryInput.key(['tab'], () => {
+      this.summaryDraft = this.summaryInput.getValue();
+      this.descInput.focus();
+    });
+
+    this.summaryInput.key(['S-tab'], () => {
+      this.summaryDraft = this.summaryInput.getValue();
+      this.fileList.focus();
+    });
+
+    this.descInput.key(['tab'], () => {
+      this.descDraft = this.descInput.getValue();
+      this.commitBtn.focus();
+    });
+
+    this.descInput.key(['S-tab'], () => {
+      this.descDraft = this.descInput.getValue();
+      this.summaryInput.focus();
+    });
+
+    this.commitBtn.key(['tab'], () => {
+      this.fileList.focus();
+    });
+
+    this.commitBtn.key(['S-tab'], () => {
+      this.descInput.focus();
     });
 
     this.fileList.on('select item', (item, index) => {
@@ -260,8 +315,8 @@ export class ChangesView {
   }
 
   async executeCommit() {
-    const summary = this.summaryInput.getValue().trim();
-    const description = this.descInput.getValue().trim();
+    const summary = this.summaryInput.getValue().trim() || this.summaryDraft.trim();
+    const description = this.descInput.getValue().trim() || this.descDraft.trim();
 
     if (!summary) {
       this.screen.emit('notify', 'Commit summary is required!');
@@ -273,6 +328,8 @@ export class ChangesView {
       await this.gitService.commit(summary, description);
       this.summaryInput.setValue('');
       this.descInput.setValue('');
+      this.summaryDraft = '';
+      this.descDraft = '';
       this.fileList.focus();
       await this.refresh();
       if (this.onStatusChanged) this.onStatusChanged();
