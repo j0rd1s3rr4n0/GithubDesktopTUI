@@ -1,4 +1,5 @@
 import blessed from 'blessed';
+import { I18nService } from '../../git/i18n-service.js';
 
 export class Header {
   constructor(options = {}) {
@@ -15,27 +16,33 @@ export class Header {
         fg: 'white'
       }
     });
+
+    this.lastData = null;
   }
 
-  update({ repoName, currentBranch, ahead = 0, behind = 0, ghUser = null }) {
-    const repoText = `{bold}{white-fg} GitHub Desktop TUI{/white-fg}{/bold} | Repo: {green-fg}${repoName}{/green-fg}`;
-    const branchBadge = `{bold}{black-bg}{yellow-fg}  ${currentBranch} {/yellow-fg}{/black-bg}{/bold}`;
+  update({ repoName, currentBranch, ahead = 0, behind = 0, ghUser = null } = {}) {
+    if (arguments[0]) {
+      this.lastData = arguments[0];
+    }
+    if (!this.lastData) return;
+
+    const data = this.lastData;
+    const repoText = `{bold}{white-fg} GitHub Desktop TUI{/white-fg}{/bold} | ${I18nService.t('headerRepo')} {green-fg}${data.repoName}{/green-fg}`;
+    const branchBadge = `{bold}{black-bg}{yellow-fg}  ${data.currentBranch} {/yellow-fg}{/black-bg}{/bold}`;
     
     let syncText = '{green-fg}✓ Up to date{/green-fg}';
-    if (ahead > 0 || behind > 0) {
-      const aheadStr = ahead > 0 ? `{yellow-fg}↑${ahead}{/yellow-fg}` : '';
-      const behindStr = behind > 0 ? `{magenta-fg}↓${behind}{/magenta-fg}` : '';
+    if (data.ahead > 0 || data.behind > 0) {
+      const aheadStr = data.ahead > 0 ? `{yellow-fg}↑${data.ahead}{/yellow-fg}` : '';
+      const behindStr = data.behind > 0 ? `{magenta-fg}↓${data.behind}{/magenta-fg}` : '';
       syncText = `{bold}${aheadStr} ${behindStr}{/bold}`.trim();
     }
 
-    let ghStatus = '{yellow-fg}GitHub: Not Logged In [L]{/yellow-fg}';
-    if (ghUser) {
-      ghStatus = `{cyan-fg}GitHub: @${ghUser}{/cyan-fg}`;
+    let ghStatus = `{yellow-fg}${I18nService.t('headerUser')} ${I18nService.t('notLoggedIn')} [L]{/yellow-fg}`;
+    if (data.ghUser) {
+      ghStatus = `{cyan-fg}${I18nService.t('headerUser')} @${data.ghUser}{/cyan-fg}`;
     }
 
-    const shortcutsText = '{cyan-fg}[F1/?]{/cyan-fg} Help  {cyan-fg}[1-5]{/cyan-fg} Tabs  {cyan-fg}[P]{/cyan-fg} Push  {cyan-fg}[p]{/cyan-fg} Pull  {cyan-fg}[L]{/cyan-fg} GitHub Auth  {cyan-fg}[r]{/cyan-fg} Refresh  {cyan-fg}[q]{/cyan-fg} Quit';
-
-    const content = `${repoText}   Branch: ${branchBadge}   Sync: ${syncText}   ${ghStatus}\n${shortcutsText}`;
+    const content = `${repoText}   ${I18nService.t('headerBranch')} ${branchBadge}   Sync: ${syncText}   ${ghStatus}`;
     this.box.setContent(content);
   }
 }

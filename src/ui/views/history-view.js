@@ -1,5 +1,6 @@
 import blessed from 'blessed';
 import { DiffViewer } from '../components/diff-viewer.js';
+import { I18nService } from '../../git/i18n-service.js';
 
 export class HistoryView {
   constructor(screen, gitService, options = {}) {
@@ -21,7 +22,7 @@ export class HistoryView {
       left: 0,
       width: '40%',
       height: '100%',
-      label: ' {bold}Commit History{/bold} ',
+      label: ` {bold}${I18nService.t('commitLogLabel')}{/bold} `,
       tags: true,
       border: { type: 'line' },
       style: {
@@ -64,13 +65,18 @@ export class HistoryView {
       left: 0,
       width: '100%',
       height: '100%-7',
-      label: ' {bold}Commit Patch Diff{/bold} '
+      label: ` {bold}${I18nService.t('commitPatchLabel')}{/bold} `
     });
     this.rightCol.append(this.patchViewer.box);
 
     this.commitsData = [];
-
     this.setupEvents();
+  }
+
+  updateI18nLabels() {
+    this.commitList.setLabel(` {bold}${I18nService.t('commitLogLabel')}{/bold} `);
+    this.patchViewer.box.setLabel(` {bold}${I18nService.t('commitPatchLabel')}{/bold} `);
+    this.screen.render();
   }
 
   setupEvents() {
@@ -80,12 +86,13 @@ export class HistoryView {
   }
 
   async refresh() {
+    this.updateI18nLabels();
     try {
       this.commitsData = await this.gitService.getCommitHistory(60);
 
       if (this.commitsData.length === 0) {
-        this.commitList.setItems(['{gray-fg}No commit history{/gray-fg}']);
-        this.metaBox.setContent('No commits found.');
+        this.commitList.setItems([`{gray-fg}${I18nService.t('noCommitsFound')}{/gray-fg}`]);
+        this.metaBox.setContent(I18nService.t('noCommitsFound'));
         this.patchViewer.setContent('');
         return;
       }

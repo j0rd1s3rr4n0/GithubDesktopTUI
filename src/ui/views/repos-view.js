@@ -1,7 +1,7 @@
 import blessed from 'blessed';
 import path from 'path';
-import fs from 'fs';
 import { RepoStore } from '../../git/repo-store.js';
+import { I18nService } from '../../git/i18n-service.js';
 
 export class ReposView {
   constructor(screen, app, options = {}) {
@@ -23,7 +23,7 @@ export class ReposView {
       left: 0,
       width: '50%',
       height: '100%-4',
-      label: ' {bold}Repositories (Select & Enter to Switch){/bold} ',
+      label: ` {bold}${I18nService.t('reposListLabelSel')}{/bold} `,
       tags: true,
       border: { type: 'line' },
       style: {
@@ -45,7 +45,7 @@ export class ReposView {
       left: '50%',
       width: '50%',
       height: '100%-4',
-      label: ' {bold}Repository Details & Switcher{/bold} ',
+      label: ` {bold}${I18nService.t('reposDetailLabel')}{/bold} `,
       tags: true,
       border: { type: 'line' },
       style: {
@@ -68,7 +68,7 @@ export class ReposView {
       left: 2,
       width: 24,
       height: 1,
-      content: ' [Enter] Switch Repo ',
+      content: I18nService.t('switchRepoBtn'),
       style: {
         bg: 'green',
         fg: 'black',
@@ -86,7 +86,7 @@ export class ReposView {
       left: 0,
       width: '100%',
       height: 4,
-      label: ' {bold}Open Any Folder Path{/bold} ',
+      label: ` {bold}${I18nService.t('openPathLabel')}{/bold} `,
       border: { type: 'line' },
       style: {
         border: { fg: 'green' }
@@ -114,7 +114,7 @@ export class ReposView {
       right: 1,
       width: 14,
       height: 1,
-      content: ' Open Path ',
+      content: I18nService.t('openPathBtn'),
       align: 'center',
       style: {
         bg: 'green',
@@ -127,8 +127,16 @@ export class ReposView {
     });
 
     this.combinedRepos = [];
-
     this.setupEvents();
+  }
+
+  updateI18nLabels() {
+    this.repoList.setLabel(` {bold}${I18nService.t('reposListLabelSel')}{/bold} `);
+    this.detailBox.setLabel(` {bold}${I18nService.t('reposDetailLabel')}{/bold} `);
+    this.pathForm.setLabel(` {bold}${I18nService.t('openPathLabel')}{/bold} `);
+    this.switchBtn.setContent(I18nService.t('switchRepoBtn'));
+    this.pathSwitchBtn.setContent(I18nService.t('openPathBtn'));
+    this.screen.render();
   }
 
   setupEvents() {
@@ -175,13 +183,13 @@ export class ReposView {
     if (!this.combinedRepos || !this.combinedRepos[index]) return;
     const item = this.combinedRepos[index];
 
-    const typeBadge = item.isCloned ? '{magenta-fg}Cloned GitHub Repo{/magenta-fg}' : '{cyan-fg}Local Directory Repo{/cyan-fg}';
+    const typeBadge = item.isCloned ? `{magenta-fg}${I18nService.t('clonedRepoBadge')}{/magenta-fg}` : `{cyan-fg}${I18nService.t('localRepoBadge')}{/cyan-fg}`;
 
     const content = [
-      `{bold}Repository Name:{/bold} ${item.name}`,
-      `{bold}Type:{/bold}            ${typeBadge}`,
-      `{bold}Local Path:{/bold}      ${item.path}`,
-      item.url ? `{bold}Remote URL:{/bold}      ${item.url}` : '',
+      `{bold}${I18nService.t('repoNameLabel')}{/bold} ${item.name}`,
+      `{bold}${I18nService.t('typeLabel')}{/bold}            ${typeBadge}`,
+      `{bold}${I18nService.t('localPathLabel')}{/bold}      ${item.path}`,
+      item.url ? `{bold}${I18nService.t('remoteUrlLabel')}{/bold}      ${item.url}` : '',
       '',
       '{yellow-fg}{bold}Action:{/bold}{/yellow-fg}',
       ' • Press {cyan-fg}Enter{/cyan-fg} or click Switch Repo to jump directly to this repository.'
@@ -192,13 +200,13 @@ export class ReposView {
   }
 
   refresh() {
+    this.updateI18nLabels();
     const recent = RepoStore.getRecent();
     const cloned = RepoStore.getCloned();
 
     const clonedPaths = new Set(cloned.map(c => c.path));
     const combined = [];
 
-    // First add all cloned repos
     cloned.forEach(c => {
       combined.push({
         name: c.name,
@@ -208,7 +216,6 @@ export class ReposView {
       });
     });
 
-    // Then add non-cloned local repos
     recent.forEach(p => {
       if (!clonedPaths.has(p)) {
         combined.push({

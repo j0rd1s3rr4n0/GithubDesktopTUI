@@ -1,4 +1,5 @@
 import blessed from 'blessed';
+import { I18nService } from '../../git/i18n-service.js';
 
 export class GithubView {
   constructor(screen, ghService, options = {}) {
@@ -13,42 +14,42 @@ export class GithubView {
       hidden: true
     });
 
-    // Column 1: Pull Requests
-    this.prBox = blessed.list({
+    // Top Panel: Pull Requests
+    this.prList = blessed.list({
       parent: this.container,
       top: 0,
       left: 0,
-      width: '33%',
-      height: '100%',
-      label: ' {bold}Pull Requests (gh pr list){/bold} ',
+      width: '50%',
+      height: '50%',
+      label: ` {bold}${I18nService.t('prListLabel')}{/bold} `,
       tags: true,
       border: { type: 'line' },
       style: {
-        border: { fg: 'cyan' },
+        border: { fg: 'green' },
         selected: { bg: 'blue', fg: 'white', bold: true },
-        focus: { border: { fg: 'green' } }
+        focus: { border: { fg: 'yellow' } }
       },
       keys: true,
       vi: true,
       mouse: true,
       scrollable: true,
-      scrollbar: { ch: '█', style: { fg: 'cyan' } }
+      scrollbar: { ch: '█', style: { fg: 'green' } }
     });
 
-    // Column 2: Issues
-    this.issuesBox = blessed.list({
+    // Top Right: Issues
+    this.issueList = blessed.list({
       parent: this.container,
       top: 0,
-      left: '33%',
-      width: '33%',
-      height: '100%',
-      label: ' {bold}Issues (gh issue list){/bold} ',
+      left: '50%',
+      width: '50%',
+      height: '50%',
+      label: ` {bold}${I18nService.t('issuesListLabel')}{/bold} `,
       tags: true,
       border: { type: 'line' },
       style: {
         border: { fg: 'yellow' },
         selected: { bg: 'blue', fg: 'white', bold: true },
-        focus: { border: { fg: 'green' } }
+        focus: { border: { fg: 'yellow' } }
       },
       keys: true,
       vi: true,
@@ -57,98 +58,69 @@ export class GithubView {
       scrollbar: { ch: '█', style: { fg: 'yellow' } }
     });
 
-    // Column 3: Remote Repositories
-    this.reposBox = blessed.list({
+    // Bottom Panel: Remote Repositories
+    this.repoList = blessed.list({
       parent: this.container,
-      top: 0,
-      left: '66%',
-      width: '34%',
-      height: '100%',
-      label: ' {bold}My Repositories (gh repo list){/bold} ',
+      top: '50%',
+      left: 0,
+      width: '100%',
+      height: '50%',
+      label: ` {bold}${I18nService.t('reposListLabel')}{/bold} `,
       tags: true,
       border: { type: 'line' },
       style: {
-        border: { fg: 'magenta' },
+        border: { fg: 'cyan' },
         selected: { bg: 'blue', fg: 'white', bold: true },
-        focus: { border: { fg: 'green' } }
+        focus: { border: { fg: 'yellow' } }
       },
       keys: true,
       vi: true,
       mouse: true,
       scrollable: true,
-      scrollbar: { ch: '█', style: { fg: 'magenta' } }
+      scrollbar: { ch: '█', style: { fg: 'cyan' } }
     });
-
-    this.prsData = [];
-    this.issuesData = [];
-    this.reposData = [];
-
-    this.setupEvents();
   }
 
-  setupEvents() {
-    this.prBox.on('select item', (item, index) => {
-      if (this.prsData[index]) {
-        this.screen.emit('notify', `PR #${this.prsData[index].number}: ${this.prsData[index].url}`);
-      }
-    });
-
-    this.issuesBox.on('select item', (item, index) => {
-      if (this.issuesData[index]) {
-        this.screen.emit('notify', `Issue #${this.issuesData[index].number}: ${this.issuesData[index].url}`);
-      }
-    });
-
-    this.reposBox.on('select item', (item, index) => {
-      if (this.reposData[index]) {
-        this.screen.emit('notify', `Repo: ${this.reposData[index].nameWithOwner} - ${this.reposData[index].url}`);
-      }
-    });
+  updateI18nLabels() {
+    this.prList.setLabel(` {bold}${I18nService.t('prListLabel')}{/bold} `);
+    this.issueList.setLabel(` {bold}${I18nService.t('issuesListLabel')}{/bold} `);
+    this.repoList.setLabel(` {bold}${I18nService.t('reposListLabel')}{/bold} `);
+    this.screen.render();
   }
 
   async refresh() {
+    this.updateI18nLabels();
     const auth = await this.ghService.getAuthStatus();
-
     if (!auth.isLoggedIn) {
-      const notAuthText = ['{yellow-fg}gh CLI is not logged in.{/yellow-fg}', 'Press {cyan-fg}L{/cyan-fg} to run gh auth login.'];
-      this.prBox.setItems(notAuthText);
-      this.issuesBox.setItems(notAuthText);
-      this.reposBox.setItems(notAuthText);
+      this.prList.setItems(['{yellow-fg}GitHub CLI not authenticated. Press [L] to login.{/yellow-fg}']);
+      this.issueList.setItems(['{yellow-fg}Press [L] to authenticate with GitHub CLI.{/yellow-fg}']);
+      this.repoList.setItems(['{yellow-fg}Press [L] to authenticate with GitHub CLI.{/yellow-fg}']);
       this.screen.render();
       return;
     }
 
-    // Fetch PRs
-    this.prsData = await this.ghService.listPullRequests();
-    if (this.prsData.length === 0) {
-      this.prBox.setItems(['{gray-fg}No open pull requests{/gray-fg}']);
-    } else {
-      this.prBox.setItems(this.prsData.map(pr => {
-        const author = pr.author ? `@${pr.author.login}` : '';
-        return `{cyan-fg}#${pr.number}{/cyan-fg} ${pr.title} {gray-fg}(${author}){/gray-fg}`;
-      }));
+    try {
+      const prs = await this.ghService.getPullRequests();
+      const prItems = prs.map(pr => `{green-fg}#${pr.number}{/green-fg} ${pr.title} {gray-fg}(${pr.headRefName}){/gray-fg}`);
+      this.prList.setItems(prItems.length ? prItems : ['{gray-fg}No open pull requests{/gray-fg}']);
+    } catch {
+      this.prList.setItems(['{gray-fg}Failed to fetch PRs{/gray-fg}']);
     }
 
-    // Fetch Issues
-    this.issuesData = await this.ghService.listIssues();
-    if (this.issuesData.length === 0) {
-      this.issuesBox.setItems(['{gray-fg}No open issues{/gray-fg}']);
-    } else {
-      this.issuesBox.setItems(this.issuesData.map(issue => {
-        const author = issue.author ? `@${issue.author.login}` : '';
-        return `{yellow-fg}#${issue.number}{/yellow-fg} ${issue.title} {gray-fg}(${author}){/gray-fg}`;
-      }));
+    try {
+      const issues = await this.ghService.getIssues();
+      const issueItems = issues.map(i => `{yellow-fg}#${i.number}{/yellow-fg} ${i.title}`);
+      this.issueList.setItems(issueItems.length ? issueItems : ['{gray-fg}No open issues{/gray-fg}']);
+    } catch {
+      this.issueList.setItems(['{gray-fg}Failed to fetch issues{/gray-fg}']);
     }
 
-    // Fetch Repos
-    this.reposData = await this.ghService.listUserRepos();
-    if (this.reposData.length === 0) {
-      this.reposBox.setItems(['{gray-fg}No repositories found{/gray-fg}']);
-    } else {
-      this.reposBox.setItems(this.reposData.map(r => {
-        const lock = r.isPrivate ? '{red-fg}🔒{/red-fg} ' : '{green-fg}🌐{/green-fg} ';
-        return `${lock}{magenta-fg}${r.nameWithOwner}{/magenta-fg}`;
-      }));
+    try {
+      const repos = await this.ghService.getUserRepos();
+      const repoItems = repos.map(r => `{cyan-fg}${r.nameWithOwner}{/cyan-fg} {gray-fg}(${r.isPrivate ? 'Private' : 'Public'}){/gray-fg}`);
+      this.repoList.setItems(repoItems.length ? repoItems : ['{gray-fg}No repositories found{/gray-fg}']);
+    } catch {
+      this.repoList.setItems(['{gray-fg}Failed to fetch repositories{/gray-fg}']);
     }
 
     this.screen.render();
@@ -156,7 +128,7 @@ export class GithubView {
 
   show() {
     this.container.show();
-    this.prBox.focus();
+    this.prList.focus();
     this.refresh();
   }
 

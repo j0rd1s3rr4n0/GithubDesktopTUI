@@ -1,5 +1,6 @@
 import blessed from 'blessed';
 import { DiffViewer } from '../components/diff-viewer.js';
+import { I18nService } from '../../git/i18n-service.js';
 
 export class ChangesView {
   constructor(screen, gitService, options = {}) {
@@ -30,7 +31,7 @@ export class ChangesView {
       left: 0,
       width: '100%',
       height: '60%',
-      label: ' {bold}Changes & Staging{/bold} ',
+      label: ` {bold}${I18nService.t('changesLabel')}{/bold} `,
       tags: true,
       border: { type: 'line' },
       style: {
@@ -52,7 +53,7 @@ export class ChangesView {
       left: 0,
       width: '100%',
       height: '40%',
-      label: ' {bold}Commit Panel{/bold} ',
+      label: ` {bold}${I18nService.t('commitPanelLabel')}{/bold} `,
       tags: true,
       border: { type: 'line' },
       style: {
@@ -61,11 +62,11 @@ export class ChangesView {
       }
     });
 
-    blessed.text({
+    this.summaryText = blessed.text({
       parent: this.commitBox,
       top: 0,
       left: 1,
-      content: '{bold}Summary:{/bold}',
+      content: `{bold}${I18nService.t('summaryLabel')}{/bold}`,
       tags: true
     });
 
@@ -84,11 +85,11 @@ export class ChangesView {
       mouse: true
     });
 
-    blessed.text({
+    this.descText = blessed.text({
       parent: this.commitBox,
       top: 4,
       left: 1,
-      content: '{gray-fg}Description (Optional):{/gray-fg}',
+      content: `{gray-fg}${I18nService.t('descriptionLabel')}{/gray-fg}`,
       tags: true
     });
 
@@ -113,7 +114,7 @@ export class ChangesView {
       left: 1,
       width: '100%-4',
       height: 1,
-      content: ' Commit Changes (Ctrl+Enter) ',
+      content: I18nService.t('commitBtn'),
       align: 'center',
       style: {
         bg: 'green',
@@ -135,13 +136,20 @@ export class ChangesView {
     this.container.append(this.diffViewer.box);
 
     this.filesData = [];
-
-    // Store draft text so Esc never clears input
     this.summaryDraft = '';
     this.descDraft = '';
 
-    // Bindings
     this.setupEvents();
+  }
+
+  updateI18nLabels() {
+    this.fileList.setLabel(` {bold}${I18nService.t('changesLabel')}{/bold} `);
+    this.commitBox.setLabel(` {bold}${I18nService.t('commitPanelLabel')}{/bold} `);
+    this.summaryText.setContent(`{bold}${I18nService.t('summaryLabel')}{/bold}`);
+    this.descText.setContent(`{gray-fg}${I18nService.t('descriptionLabel')}{/gray-fg}`);
+    this.commitBtn.setContent(I18nService.t('commitBtn'));
+    this.diffViewer.box.setLabel(` {bold}${I18nService.t('diffLabel')}{/bold} `);
+    this.screen.render();
   }
 
   isInputFocused() {
@@ -149,7 +157,6 @@ export class ChangesView {
   }
 
   setupEvents() {
-    // Single-read guard on focus to prevent double keypress listeners
     this.summaryInput.on('focus', () => {
       if (!this.summaryInput._reading) {
         this.summaryInput.readInput();
@@ -162,7 +169,6 @@ export class ChangesView {
       }
     });
 
-    // Keep draft text saved continuously
     this.summaryInput.on('keypress', () => {
       this.summaryDraft = this.summaryInput.getValue();
     });
@@ -171,7 +177,6 @@ export class ChangesView {
       this.descDraft = this.descInput.getValue();
     });
 
-    // On cancel / Esc: restore draft text and return to fileList
     this.summaryInput.on('cancel', () => {
       this.summaryInput.setValue(this.summaryDraft || this.summaryInput.getValue());
       this.fileList.focus();
@@ -184,7 +189,6 @@ export class ChangesView {
       this.screen.render();
     });
 
-    // Tab / Shift+Tab Navigation between controls
     this.summaryInput.key(['tab'], () => {
       this.summaryDraft = this.summaryInput.getValue();
       this.descInput.focus();
@@ -252,13 +256,14 @@ export class ChangesView {
   }
 
   async refresh() {
+    this.updateI18nLabels();
     try {
       const status = await this.gitService.getStatus();
       this.filesData = status.files;
 
       if (this.filesData.length === 0) {
-        this.fileList.setItems(['{gray-fg}✓ No local changes{/gray-fg}']);
-        this.diffViewer.setContent('(No changes in working directory)');
+        this.fileList.setItems([`{gray-fg}${I18nService.t('noLocalChanges')}{/gray-fg}`]);
+        this.diffViewer.setContent(I18nService.t('noChangesInWorkDir'));
         return;
       }
 
@@ -319,7 +324,7 @@ export class ChangesView {
     const description = this.descInput.getValue().trim() || this.descDraft.trim();
 
     if (!summary) {
-      this.screen.emit('notify', 'Commit summary is required!');
+      this.screen.emit('notify', I18nService.t('summaryRequired'));
       this.summaryInput.focus();
       return;
     }
@@ -333,7 +338,7 @@ export class ChangesView {
       this.fileList.focus();
       await this.refresh();
       if (this.onStatusChanged) this.onStatusChanged();
-      this.screen.emit('notify', `Committed: "${summary}"`);
+      this.screen.emit('notify', `${I18nService.t('committedMsg')}"${summary}"`);
     } catch (err) {
       this.screen.emit('notify', `Commit failed: ${err.message}`);
     }

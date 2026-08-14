@@ -2,7 +2,7 @@ import { RepoStore } from './repo-store.js';
 
 const translations = {
   en: {
-    // Tabs
+    // Tabs & Header
     tabChanges: '[1] Changes',
     tabHistory: '[2] History',
     tabBranches: '[3] Branches',
@@ -10,8 +10,14 @@ const translations = {
     tabGithub: '[5] GitHub',
     tabRepos: '[6] Repositories',
     tabAbout: '[7] About',
+    headerRepo: 'Repo:',
+    headerBranch: 'Branch:',
+    headerAhead: 'Ahead:',
+    headerBehind: 'Behind:',
+    headerUser: 'GitHub:',
+    notLoggedIn: 'Not Logged In',
 
-    // Bottom hints
+    // Bottom Hints
     bottomHint: ' Click Tabs or press 1-7 | [?] Help | [F3] Lang: EN | [L] Auth | [S-q] Quit',
     refreshedNotice: 'Refreshed Git & GitHub status',
 
@@ -33,14 +39,18 @@ const translations = {
     noCommitsFound: 'No commits found in repository',
 
     // Branches View
-    localBranchesLabel: 'Local Branches',
+    localBranchesLabel: 'Local Branches (Enter: Checkout | b: New | P: Push | p: Pull)',
     remoteBranchesLabel: 'Remote Branches',
     checkoutSuccess: 'Switched to branch: ',
+    newBranchModalLabel: 'Create New Branch',
+    checkoutAfterCreation: 'Checkout after creation',
 
     // Stash View
-    stashListLabel: 'Stash List Drawer',
+    stashListLabel: 'Stash List Drawer (s: Create | a: Apply | p: Pop | x: Drop)',
     stashApplied: 'Applied stash successfully',
     stashPopped: 'Popped stash successfully',
+    stashDropped: 'Dropped stash successfully',
+    stashCreated: 'Stashed changes successfully',
 
     // GitHub View
     prListLabel: 'Pull Requests',
@@ -48,13 +58,19 @@ const translations = {
     reposListLabel: 'Remote Repositories',
 
     // Repositories View
-    reposListLabel: 'Repositories (Select & Enter to Switch)',
+    reposListLabelSel: 'Repositories (Select & Enter to Switch)',
     reposDetailLabel: 'Repository Details & Switcher',
     openPathLabel: 'Open Any Folder Path',
     switchRepoBtn: ' [Enter] Switch Repo ',
     openPathBtn: ' Open Path ',
+    repoNameLabel: 'Repository Name:',
+    typeLabel: 'Type:',
+    localPathLabel: 'Local Path:',
+    remoteUrlLabel: 'Remote URL:',
+    clonedRepoBadge: 'Cloned GitHub Repo',
+    localRepoBadge: 'Local Directory Repo',
 
-    // About View
+    // About View & Profile
     aboutTitle: '🐙 About GitHub Desktop TUI (gd)',
     aboutVersion: 'Version 1.0.0 — Terminal Interface for Git & GitHub CLI',
     aboutAppDesc: 'A modern, feature-packed Terminal User Interface (TUI) for Linux & macOS inspired by GitHub Desktop, powered by Node.js and GitHub CLI (gh).',
@@ -62,7 +78,24 @@ const translations = {
     creatorName: 'Jordi Serrano (j0rd1s3rr4n0)',
     githubProfile: 'GitHub Profile:',
     featuresTitle: 'Main Features:',
-    langLabel: 'Language / Idioma:'
+    langLabel: 'Language:',
+    creatorProfileLabel: '👨‍💻 Creator Profile & Live Avatar',
+    syncProfileBtn: ' [r] Sync Profile with GitHub ',
+
+    // Modals & General
+    notAGitRepoTitle: 'Not a Git Repository',
+    notAGitRepoMsg: 'is not a Git repository.\n\nChoose an action to proceed:',
+    initGitBtn: ' [i] Init Git ',
+    browseReposBtn: ' [b] Browse Repos ',
+    manualUrlBtn: ' [c] Manual URL ',
+    closeBtn: ' [Esc/q] Close ',
+    quitAppBtn: ' [Shift+Q] Quit App ',
+    cloneDestTitle: 'Clone Repository - Select Target Destination',
+    cloneDestParentLabel: ' Destination Parent Directory (. = current path): ',
+    cloneConfirmBtn: ' [Enter] Clone ',
+    cancelBtn: ' [Esc] Cancel ',
+    errorModalTitle: 'Error Details & Output',
+    loggedToErrorLog: 'Logged to ~/.gitu_error.log'
   },
   es: {
     tabChanges: '[1] Cambios',
@@ -72,8 +105,16 @@ const translations = {
     tabGithub: '[5] GitHub',
     tabRepos: '[6] Repositorios',
     tabAbout: '[7] Acerca de',
+    headerRepo: 'Repo:',
+    headerBranch: 'Rama:',
+    headerAhead: 'Adelante:',
+    headerBehind: 'Atrás:',
+    headerUser: 'GitHub:',
+    notLoggedIn: 'No Autenticado',
+
     bottomHint: ' Clic en pestañas o pulsa 1-7 | [?] Ayuda | [F3] Idioma: ES | [L] Auth | [S-q] Salir',
     refreshedNotice: 'Estado de Git y GitHub actualizado',
+
     changesLabel: 'Cambios y Staging',
     commitPanelLabel: 'Panel de Commit',
     summaryLabel: 'Resumen:',
@@ -84,23 +125,39 @@ const translations = {
     noChangesInWorkDir: '(Sin cambios en el directorio de trabajo)',
     summaryRequired: '¡El resumen del commit es obligatorio!',
     committedMsg: 'Commit realizado: ',
+
     commitLogLabel: 'Cronología de Commits',
     commitPatchLabel: 'Detalles del Parche y Diff',
     noCommitsFound: 'No se encontraron commits en el repositorio',
-    localBranchesLabel: 'Ramas Locales',
+
+    localBranchesLabel: 'Ramas Locales (Enter: Checkout | b: Nueva | P: Push | p: Pull)',
     remoteBranchesLabel: 'Ramas Remotas',
     checkoutSuccess: 'Cambiado a la rama: ',
-    stashListLabel: 'Cajón de Stashes',
+    newBranchModalLabel: 'Crear Nueva Rama',
+    checkoutAfterCreation: 'Cambiar a la rama tras crear',
+
+    stashListLabel: 'Cajón de Stashes (s: Crear | a: Aplicar | p: Pop | x: Eliminar)',
     stashApplied: 'Stash aplicado con éxito',
     stashPopped: 'Stash liberado (pop) con éxito',
+    stashDropped: 'Stash eliminado con éxito',
+    stashCreated: 'Stash guardado con éxito',
+
     prListLabel: 'Pull Requests',
     issuesListLabel: 'Issues',
     reposListLabel: 'Repositorios Remotos',
-    reposListLabel: 'Repositorios (Selecciona y Enter para Cambiar)',
+
+    reposListLabelSel: 'Repositorios (Selecciona y Enter para Cambiar)',
     reposDetailLabel: 'Detalles del Repositorio y Selector',
     openPathLabel: 'Abrir cualquier carpeta del sistema',
     switchRepoBtn: ' [Enter] Cambiar Repo ',
     openPathBtn: ' Abrir Ruta ',
+    repoNameLabel: 'Nombre del Repositorio:',
+    typeLabel: 'Tipo:',
+    localPathLabel: 'Ruta Local:',
+    remoteUrlLabel: 'URL Remota:',
+    clonedRepoBadge: 'Repositorio Clonado de GitHub',
+    localRepoBadge: 'Directorio Local Git',
+
     aboutTitle: '🐙 Acerca de GitHub Desktop TUI (gd)',
     aboutVersion: 'Versión 1.0.0 — Interfaz de Terminal para Git & GitHub CLI',
     aboutAppDesc: 'Una aplicación TUI moderna, ultrarrápida y completa para la terminal, inspirada en GitHub Desktop y potenciada por Git y GitHub CLI (gh).',
@@ -108,7 +165,23 @@ const translations = {
     creatorName: 'Jordi Serrano (j0rd1s3rr4n0)',
     githubProfile: 'Perfil de GitHub:',
     featuresTitle: 'Características principales:',
-    langLabel: 'Idioma / Language:'
+    langLabel: 'Idioma:',
+    creatorProfileLabel: '👨‍💻 Perfil del Creador y Avatar en vivo',
+    syncProfileBtn: ' [r] Sincronizar Perfil con GitHub ',
+
+    notAGitRepoTitle: 'No es un Repositorio Git',
+    notAGitRepoMsg: 'no es un repositorio Git.\n\nSelecciona una acción para continuar:',
+    initGitBtn: ' [i] Iniciar Git ',
+    browseReposBtn: ' [b] Explorar Repos ',
+    manualUrlBtn: ' [c] URL Manual ',
+    closeBtn: ' [Esc/q] Cerrar ',
+    quitAppBtn: ' [Shift+Q] Salir de la App ',
+    cloneDestTitle: 'Clonar Repositorio - Seleccionar Carpeta Destino',
+    cloneDestParentLabel: ' Carpeta Padre Destino (. = ruta actual): ',
+    cloneConfirmBtn: ' [Enter] Clonar ',
+    cancelBtn: ' [Esc] Cancelar ',
+    errorModalTitle: 'Detalles del Error y Registro',
+    loggedToErrorLog: 'Registrado en ~/.gitu_error.log'
   },
   ca: {
     tabChanges: '[1] Canvis',
@@ -118,8 +191,16 @@ const translations = {
     tabGithub: '[5] GitHub',
     tabRepos: '[6] Repositoris',
     tabAbout: '[7] Sobre',
+    headerRepo: 'Repo:',
+    headerBranch: 'Branca:',
+    headerAhead: 'Endavant:',
+    headerBehind: 'Enrere:',
+    headerUser: 'GitHub:',
+    notLoggedIn: 'No Autenticat',
+
     bottomHint: ' Clic a pestanyes o prem 1-7 | [?] Ajuda | [F3] Idioma: CA | [L] Auth | [S-q] Sortir',
     refreshedNotice: 'Estat de Git i GitHub actualitzat',
+
     changesLabel: 'Canvis i Staging',
     commitPanelLabel: 'Panell de Commit',
     summaryLabel: 'Resum:',
@@ -130,23 +211,39 @@ const translations = {
     noChangesInWorkDir: '(Sense canvis al directori de treball)',
     summaryRequired: 'El resum del commit és obligatori!',
     committedMsg: 'Commit realitzat: ',
+
     commitLogLabel: 'Cronologia de Commits',
     commitPatchLabel: 'Detalls del Patró i Diff',
     noCommitsFound: 'No s\'han trobat commits al repositori',
-    localBranchesLabel: 'Branques Locals',
+
+    localBranchesLabel: 'Branques Locals (Enter: Checkout | b: Nova | P: Push | p: Pull)',
     remoteBranchesLabel: 'Branques Remotes',
     checkoutSuccess: 'Canviat a la branca: ',
-    stashListLabel: 'Caixó de Stashes',
+    newBranchModalLabel: 'Crear Nova Branca',
+    checkoutAfterCreation: 'Canviar a la branca en crear',
+
+    stashListLabel: 'Caixó de Stashes (s: Crear | a: Aplicar | p: Pop | x: Eliminar)',
     stashApplied: 'Stash aplicat amb èxit',
     stashPopped: 'Stash alliberat (pop) amb èxit',
+    stashDropped: 'Stash eliminat amb èxit',
+    stashCreated: 'Stash desat amb èxit',
+
     prListLabel: 'Pull Requests',
     issuesListLabel: 'Issues',
     reposListLabel: 'Repositoris Remots',
-    reposListLabel: 'Repositoris (Selecciona i Enter per Canviar)',
+
+    reposListLabelSel: 'Repositoris (Selecciona i Enter per Canviar)',
     reposDetailLabel: 'Detalls del Repositori i Selector',
     openPathLabel: 'Obrir qualsevol carpeta del sistema',
     switchRepoBtn: ' [Enter] Canviar Repo ',
     openPathBtn: ' Obrir Ruta ',
+    repoNameLabel: 'Nom del Repositori:',
+    typeLabel: 'Tipus:',
+    localPathLabel: 'Ruta Local:',
+    remoteUrlLabel: 'URL Remota:',
+    clonedRepoBadge: 'Repositori Clonat de GitHub',
+    localRepoBadge: 'Directori Local Git',
+
     aboutTitle: '🐙 Sobre GitHub Desktop TUI (gd)',
     aboutVersion: 'Versió 1.0.0 — Interfície de Terminal per a Git & GitHub CLI',
     aboutAppDesc: 'Una aplicació TUI moderna, ultraràpida i completa per a la terminal, inspirada en GitHub Desktop i impulsada per Git i GitHub CLI (gh).',
@@ -154,7 +251,23 @@ const translations = {
     creatorName: 'Jordi Serrano (j0rd1s3rr4n0)',
     githubProfile: 'Perfil de GitHub:',
     featuresTitle: 'Característiques principals:',
-    langLabel: 'Idioma / Language:'
+    langLabel: 'Idioma:',
+    creatorProfileLabel: '👨‍💻 Perfil del Creador i Avatar en viu',
+    syncProfileBtn: ' [r] Sincronitzar Perfil amb GitHub ',
+
+    notAGitRepoTitle: 'No és un Repositori Git',
+    notAGitRepoMsg: 'no és un repositori Git.\n\nSelecciona una acció per continuar:',
+    initGitBtn: ' [i] Iniciar Git ',
+    browseReposBtn: ' [b] Explorar Repos ',
+    manualUrlBtn: ' [c] URL Manual ',
+    closeBtn: ' [Esc/q] Tancar ',
+    quitAppBtn: ' [Shift+Q] Sortir de l\'App ',
+    cloneDestTitle: 'Clonar Repositori - Seleccionar Carpeta Destí',
+    cloneDestParentLabel: ' Carpeta Pare Destí (. = ruta actual): ',
+    cloneConfirmBtn: ' [Enter] Clonar ',
+    cancelBtn: ' [Esc] Cancel·lar ',
+    errorModalTitle: 'Detalls de l\'Error i Registre',
+    loggedToErrorLog: 'Registrat a ~/.gitu_error.log'
   },
   fr: {
     tabChanges: '[1] Modifs',
@@ -164,6 +277,12 @@ const translations = {
     tabGithub: '[5] GitHub',
     tabRepos: '[6] Dépôts',
     tabAbout: '[7] À propos',
+    headerRepo: 'Dépôt:',
+    headerBranch: 'Branche:',
+    headerAhead: 'En avance:',
+    headerBehind: 'En retard:',
+    headerUser: 'GitHub:',
+    notLoggedIn: 'Non connecté',
     bottomHint: ' Cliquez onglets ou 1-7 | [?] Aide | [F3] Lang: FR | [L] Auth | [S-q] Quitter',
     refreshedNotice: 'Statut Git & GitHub actualisé',
     changesLabel: 'Modifications & Staging',
@@ -188,7 +307,7 @@ const translations = {
     prListLabel: 'Pull Requests',
     issuesListLabel: 'Tickets (Issues)',
     reposListLabel: 'Dépôts Distants',
-    reposListLabel: 'Dépôts (Sélectionner & Entrée pour basculer)',
+    reposListLabelSel: 'Dépôts (Sélectionner & Entrée pour basculer)',
     reposDetailLabel: 'Détails du Dépôt & Sélecteur',
     openPathLabel: 'Ouvrir n\'importe quel dossier',
     switchRepoBtn: ' [Entrée] Basculer ',
@@ -200,7 +319,7 @@ const translations = {
     creatorName: 'Jordi Serrano (j0rd1s3rr4n0)',
     githubProfile: 'Profil GitHub :',
     featuresTitle: 'Fonctionnalités principales :',
-    langLabel: 'Langue / Language :'
+    langLabel: 'Langue :'
   },
   de: {
     tabChanges: '[1] Ändrg.',
@@ -210,6 +329,12 @@ const translations = {
     tabGithub: '[5] GitHub',
     tabRepos: '[6] Repos',
     tabAbout: '[7] Über',
+    headerRepo: 'Repo:',
+    headerBranch: 'Branch:',
+    headerAhead: 'Voraus:',
+    headerBehind: 'Zurück:',
+    headerUser: 'GitHub:',
+    notLoggedIn: 'Nicht angemeldet',
     bottomHint: ' Klick Tabs oder 1-7 | [?] Hilfe | [F3] Spr: DE | [L] Auth | [S-q] Beenden',
     refreshedNotice: 'Git & GitHub Status aktualisiert',
     changesLabel: 'Änderungen & Staging',
@@ -234,7 +359,7 @@ const translations = {
     prListLabel: 'Pull Requests',
     issuesListLabel: 'Issues',
     reposListLabel: 'Remote Repositories',
-    reposListLabel: 'Repositories (Auswählen & Eingabe)',
+    reposListLabelSel: 'Repositories (Auswählen & Eingabe)',
     reposDetailLabel: 'Repository-Details & Switcher',
     openPathLabel: 'Beliebigen Ordnerpfad öffnen',
     switchRepoBtn: ' [Eingabe] Wechseln ',
@@ -246,7 +371,7 @@ const translations = {
     creatorName: 'Jordi Serrano (j0rd1s3rr4n0)',
     githubProfile: 'GitHub-Profil:',
     featuresTitle: 'Hauptfunktionen:',
-    langLabel: 'Sprache / Language:'
+    langLabel: 'Sprache:'
   },
   cs: {
     tabChanges: '[1] Změny',
@@ -256,6 +381,12 @@ const translations = {
     tabGithub: '[5] GitHub',
     tabRepos: '[6] Repositáře',
     tabAbout: '[7] O aplikaci',
+    headerRepo: 'Repo:',
+    headerBranch: 'Větev:',
+    headerAhead: 'Napřed:',
+    headerBehind: 'Pozadu:',
+    headerUser: 'GitHub:',
+    notLoggedIn: 'Nepřihlášen',
     bottomHint: ' Klikněte na záložky nebo 1-7 | [?] Nápověda | [F3] Jazyk: CS | [L] Auth | [S-q] Ukončit',
     refreshedNotice: 'Stav Git a GitHub byl aktualizován',
     changesLabel: 'Změny & Staging',
@@ -280,7 +411,7 @@ const translations = {
     prListLabel: 'Pull Requests',
     issuesListLabel: 'Issues',
     reposListLabel: 'Vzdálené repositáře',
-    reposListLabel: 'Repositáře (Vybrat & Enter pro přepnutí)',
+    reposListLabelSel: 'Repositáře (Vybrat & Enter pro přepnutí)',
     reposDetailLabel: 'Detail repositáře a přepínač',
     openPathLabel: 'Otevřít libovolnou složku',
     switchRepoBtn: ' [Enter] Přepnout ',
@@ -292,7 +423,7 @@ const translations = {
     creatorName: 'Jordi Serrano (j0rd1s3rr4n0)',
     githubProfile: 'Profil GitHub:',
     featuresTitle: 'Hlavní funkce:',
-    langLabel: 'Jazyk / Language:'
+    langLabel: 'Jazyk:'
   },
   ru: {
     tabChanges: '[1] Измен.',
@@ -302,6 +433,12 @@ const translations = {
     tabGithub: '[5] GitHub',
     tabRepos: '[6] Репозитории',
     tabAbout: '[7] О нас',
+    headerRepo: 'Репо:',
+    headerBranch: 'Ветка:',
+    headerAhead: 'Впереди:',
+    headerBehind: 'Позади:',
+    headerUser: 'GitHub:',
+    notLoggedIn: 'Не авторизован',
     bottomHint: ' Кликните вкладки или 1-7 | [?] Справка | [F3] Яз: RU | [L] Auth | [S-q] Выход',
     refreshedNotice: 'Статус Git и GitHub обновлен',
     changesLabel: 'Изменения и Индексация',
@@ -326,7 +463,7 @@ const translations = {
     prListLabel: 'Pull Requests',
     issuesListLabel: 'Issues',
     reposListLabel: 'Удаленные Репозитории',
-    reposListLabel: 'Репозитории (Выбор & Enter)',
+    reposListLabelSel: 'Репозитории (Выбор & Enter)',
     reposDetailLabel: 'Детали Репозитория и Переключатель',
     openPathLabel: 'Открыть любую папку',
     switchRepoBtn: ' [Enter] Переключить ',
@@ -338,7 +475,7 @@ const translations = {
     creatorName: 'Jordi Serrano (j0rd1s3rr4n0)',
     githubProfile: 'Профиль GitHub:',
     featuresTitle: 'Основные возможности:',
-    langLabel: 'Язык / Language:'
+    langLabel: 'Язык:'
   },
   zh: {
     tabChanges: '[1] 更改',
@@ -348,6 +485,12 @@ const translations = {
     tabGithub: '[5] GitHub',
     tabRepos: '[6] 仓库',
     tabAbout: '[7] 关于',
+    headerRepo: '仓库:',
+    headerBranch: '分支:',
+    headerAhead: '领先:',
+    headerBehind: '落后:',
+    headerUser: 'GitHub:',
+    notLoggedIn: '未登录',
     bottomHint: ' 点击标签页或按 1-7 | [?] 帮助 | [F3] 语言: ZH | [L] 登录 | [S-q] 退出',
     refreshedNotice: 'Git 和 GitHub 状态已刷新',
     changesLabel: '更改与暂存',
@@ -372,7 +515,7 @@ const translations = {
     prListLabel: 'Pull Requests',
     issuesListLabel: 'Issues 问题列表',
     reposListLabel: '远程仓库',
-    reposListLabel: '仓库列表 (选择并回车切换)',
+    reposListLabelSel: '仓库列表 (选择并回车切换)',
     reposDetailLabel: '仓库详情与切换器',
     openPathLabel: '打开任意文件夹路径',
     switchRepoBtn: ' [Enter] 切换仓库 ',
@@ -384,7 +527,7 @@ const translations = {
     creatorName: 'Jordi Serrano (j0rd1s3rr4n0)',
     githubProfile: 'GitHub 主页:',
     featuresTitle: '主要功能:',
-    langLabel: '语言 / Language:'
+    langLabel: '语言:'
   },
   ja: {
     tabChanges: '[1] 変更',
@@ -394,6 +537,12 @@ const translations = {
     tabGithub: '[5] GitHub',
     tabRepos: '[6] リポジトリ',
     tabAbout: '[7] 情報',
+    headerRepo: 'リポジトリ:',
+    headerBranch: 'ブランチ:',
+    headerAhead: '先行:',
+    headerBehind: '遅延:',
+    headerUser: 'GitHub:',
+    notLoggedIn: '未ログイン',
     bottomHint: ' タブをクリックまたは1-7 | [?] ヘルプ | [F3] 言語: JA | [L] 認証 | [S-q] 終了',
     refreshedNotice: 'GitおよびGitHubの状態を更新しました',
     changesLabel: '変更とステージング',
@@ -418,7 +567,7 @@ const translations = {
     prListLabel: 'プルリクエスト',
     issuesListLabel: 'Issue一覧',
     reposListLabel: 'リモートリポジトリ',
-    reposListLabel: 'リポジトリ一覧 (選択してEnterで切替)',
+    reposListLabelSel: 'リポジトリ一覧 (選択してEnterで切替)',
     reposDetailLabel: 'リポジトリ詳細と切り替え',
     openPathLabel: '任意のフォルダパスを開く',
     switchRepoBtn: ' [Enter] 切替 ',
@@ -430,7 +579,7 @@ const translations = {
     creatorName: 'Jordi Serrano (j0rd1s3rr4n0)',
     githubProfile: 'GitHub プロフィール:',
     featuresTitle: '主な機能:',
-    langLabel: '言語 / Language:'
+    langLabel: '言語:'
   },
   hi: {
     tabChanges: '[1] बदलाव',
@@ -440,6 +589,12 @@ const translations = {
     tabGithub: '[5] GitHub',
     tabRepos: '[6] रिपॉजिटरी',
     tabAbout: '[7] के बारे में',
+    headerRepo: 'रिपॉजिटरी:',
+    headerBranch: 'शाखा:',
+    headerAhead: 'आगे:',
+    headerBehind: 'पीछे:',
+    headerUser: 'GitHub:',
+    notLoggedIn: 'लॉगिन नहीं',
     bottomHint: ' टैब क्लिक करें या 1-7 दबाएं | [?] मदद | [F3] भाषा: HI | [L] लॉगिन | [S-q] बाहर',
     refreshedNotice: 'Git और GitHub स्थिति अपडेट की गई',
     changesLabel: 'बदलाव और स्टेजिंग',
@@ -464,7 +619,7 @@ const translations = {
     prListLabel: 'पुल रिक्वेस्ट (PRs)',
     issuesListLabel: 'इश्यूज (Issues)',
     reposListLabel: 'रिमोट रिपॉजिटरी',
-    reposListLabel: 'रिपॉजिटरी (चुनें और Enter दबाएं)',
+    reposListLabelSel: 'रिपॉजिटरी (चुनें और Enter दबाएं)',
     reposDetailLabel: 'रिपॉजिटरी विवरण और स्विचकर्ता',
     openPathLabel: 'कोई भी फ़ोल्डर पथ खोलें',
     switchRepoBtn: ' [Enter] स्विच करें ',
@@ -476,7 +631,7 @@ const translations = {
     creatorName: 'Jordi Serrano (j0rd1s3rr4n0)',
     githubProfile: 'GitHub प्रोफाइल:',
     featuresTitle: 'मुख्य विशेषताएं:',
-    langLabel: 'भाषा / Language:'
+    langLabel: 'भाषा:'
   }
 };
 

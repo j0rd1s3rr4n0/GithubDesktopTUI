@@ -62,7 +62,7 @@ export class App {
       const isRepo = await tempGit.isRepo();
 
       if (!isRepo) {
-        this.errorModal.showError('Invalid Git Repository', `Path "${resolvedPath}" is not a Git repository.`);
+        this.errorModal.showError(I18nService.t('notAGitRepoTitle'), `Path "${resolvedPath}" is not a Git repository.`);
         return;
       }
 
@@ -264,9 +264,18 @@ export class App {
     });
 
     this.notificationBar.setContent(I18nService.t('bottomHint'));
-    if (this.views[6] && typeof this.views[6].renderInfo === 'function') {
-      this.views[6].renderInfo();
+    this.header.update();
+
+    this.views.forEach(v => {
+      if (v && typeof v.updateI18nLabels === 'function') {
+        v.updateI18nLabels();
+      }
+    });
+
+    if (this.views[this.activeTab] && typeof this.views[this.activeTab].refresh === 'function') {
+      this.views[this.activeTab].refresh();
     }
+
     this.updateTabBar();
     this.screen.render();
   }
@@ -392,12 +401,10 @@ export class App {
   }
 
   initEvents() {
-    // Explicit Quit Application Shortcuts: Ctrl+C and Shift+Q
     this.screen.key(['C-c', 'S-q'], () => {
       process.exit(0);
     });
 
-    // Mouse scroll wheel support (wheelup / wheeldown) - 1 unit line by line
     this.screen.on('element wheelup', (el) => {
       if (el && typeof el.scroll === 'function') {
         el.scroll(-1);
@@ -418,7 +425,6 @@ export class App {
       }
     });
 
-    // Lowercase 'q' quits app ONLY when no modal/window is open
     this.screen.key(['q'], () => {
       if (!this.hasOpenModal()) {
         process.exit(0);
@@ -427,12 +433,10 @@ export class App {
       }
     });
 
-    // Escape closes top active modal ONLY
     this.screen.key(['escape'], () => {
       this.closeTopModal();
     });
 
-    // Hotkey 'o' or 'C-o' to open Clone / Remote Repositories Browser from anywhere
     this.screen.key(['o', 'C-o'], () => {
       const changesView = this.views[0];
       const typingInInput = this.activeTab === 0 && changesView && changesView.isInputFocused();
@@ -441,7 +445,6 @@ export class App {
       }
     });
 
-    // Hotkey 'i' when no input is focused opens Init / Clone menu
     this.screen.key(['i'], () => {
       const changesView = this.views[0];
       const typingInInput = this.activeTab === 0 && changesView && changesView.isInputFocused();
@@ -458,7 +461,6 @@ export class App {
     this.screen.key(['6'], () => this.switchTab(5));
     this.screen.key(['7'], () => this.switchTab(6));
 
-    // Next / Previous Tab cycle hotkeys
     this.screen.key(['C-right', '>'], () => {
       this.switchTab((this.activeTab + 1) % 7);
     });
@@ -517,7 +519,6 @@ export class App {
       }
     });
 
-    // Custom Screen Events
     this.screen.on('notify', msg => this.notify(msg));
     this.screen.on('show-error', (title, err) => this.errorModal.showError(title, err));
     this.screen.on('trigger-gh-auth', () => this.handleGhAuthDirect());

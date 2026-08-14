@@ -1,4 +1,5 @@
 import blessed from 'blessed';
+import { I18nService } from '../../git/i18n-service.js';
 
 export class BranchesView {
   constructor(screen, gitService, options = {}) {
@@ -13,20 +14,20 @@ export class BranchesView {
       hidden: true
     });
 
-    // Left Pane: Branch List
-    this.branchList = blessed.list({
+    // Left Column: Local Branches List
+    this.localList = blessed.list({
       parent: this.container,
       top: 0,
       left: 0,
-      width: '45%',
+      width: '50%',
       height: '100%',
-      label: ' {bold}Branches (Local & Remote){/bold} ',
+      label: ` {bold}${I18nService.t('localBranchesLabel')}{/bold} `,
       tags: true,
       border: { type: 'line' },
       style: {
         border: { fg: 'green' },
         selected: { bg: 'blue', fg: 'white', bold: true },
-        focus: { border: { fg: 'green' } }
+        focus: { border: { fg: 'yellow' } }
       },
       keys: true,
       vi: true,
@@ -35,181 +36,65 @@ export class BranchesView {
       scrollbar: { ch: '█', style: { fg: 'green' } }
     });
 
-    // Right Pane: Action Controls & Details
-    this.detailBox = blessed.box({
+    // Right Column: Remote Branches List
+    this.remoteList = blessed.list({
       parent: this.container,
       top: 0,
-      left: '45%',
-      width: '55%',
+      left: '50%',
+      width: '50%',
       height: '100%',
-      label: ' {bold}Branch Actions & Sync{/bold} ',
+      label: ` {bold}${I18nService.t('remoteBranchesLabel')}{/bold} `,
       tags: true,
       border: { type: 'line' },
       style: {
-        border: { fg: 'yellow' }
-      }
+        border: { fg: 'cyan' },
+        selected: { bg: 'blue', fg: 'white', bold: true },
+        focus: { border: { fg: 'yellow' } }
+      },
+      keys: true,
+      vi: true,
+      mouse: true,
+      scrollable: true,
+      scrollbar: { ch: '█', style: { fg: 'cyan' } }
     });
 
-    this.infoText = blessed.text({
-      parent: this.detailBox,
-      top: 1,
-      left: 2,
-      width: '100%-4',
-      tags: true,
-      content: ''
-    });
-
-    // Action buttons
-    this.checkoutBtn = blessed.button({
-      parent: this.detailBox,
-      top: 8,
-      left: 2,
-      width: 24,
-      height: 1,
-      content: ' [Enter] Checkout Branch ',
-      style: {
-        bg: 'green',
-        fg: 'black',
-        focus: { bg: 'yellow', fg: 'black' }
-      }
-    });
-
-    this.newBranchBtn = blessed.button({
-      parent: this.detailBox,
-      top: 10,
-      left: 2,
-      width: 24,
-      height: 1,
-      content: ' [b/n] Create New Branch ',
-      style: {
-        bg: 'blue',
-        fg: 'white',
-        focus: { bg: 'yellow', fg: 'black' }
-      }
-    });
-
-    this.pushBtn = blessed.button({
-      parent: this.detailBox,
-      top: 12,
-      left: 2,
-      width: 24,
-      height: 1,
-      content: ' [P] Push to Remote ',
-      style: {
-        bg: 'magenta',
-        fg: 'white',
-        focus: { bg: 'yellow', fg: 'black' }
-      }
-    });
-
-    this.pullBtn = blessed.button({
-      parent: this.detailBox,
-      top: 14,
-      left: 2,
-      width: 24,
-      height: 1,
-      content: ' [p] Pull from Remote ',
-      style: {
-        bg: 'cyan',
-        fg: 'black',
-        focus: { bg: 'yellow', fg: 'black' }
-      }
-    });
-
-    this.branchesData = [];
-    this.currentBranch = '';
+    this.localBranches = [];
+    this.remoteBranches = [];
 
     this.setupEvents();
   }
 
+  updateI18nLabels() {
+    this.localList.setLabel(` {bold}${I18nService.t('localBranchesLabel')}{/bold} `);
+    this.remoteList.setLabel(` {bold}${I18nService.t('remoteBranchesLabel')}{/bold} `);
+    this.screen.render();
+  }
+
   setupEvents() {
-    this.branchList.on('select item', (item, index) => {
-      this.onBranchSelected(index);
+    this.localList.key(['enter'], async () => {
+      const idx = this.localList.selected;
+      if (this.localBranches[idx]) {
+        await this.checkoutBranch(this.localBranches[idx].name);
+      }
     });
 
-    this.branchList.key(['enter'], () => {
-      const idx = this.branchList.selected;
-      this.checkoutSelectedBranch(idx);
-    });
-
-    this.checkoutBtn.on('press', () => {
-      const idx = this.branchList.selected;
-      this.checkoutSelectedBranch(idx);
-    });
-
-    this.newBranchBtn.on('press', () => {
+    this.localList.key(['b'], () => {
       this.screen.emit('open-branch-modal');
     });
 
-    this.pushBtn.on('press', () => {
+    this.localList.key(['S-p'], () => {
       this.screen.emit('execute-push');
     });
 
-    this.pullBtn.on('press', () => {
+    this.localList.key(['p'], () => {
       this.screen.emit('execute-pull');
     });
   }
 
-  async refresh() {
+  async checkoutBranch(branchName) {
     try {
-      const res = await this.gitService.getBranches();
-      this.currentBranch = res.current;
-      this.branchesData = res.branches;
-
-      const listItems = this.branchesData.map(b => {
-        let prefix = '  ';
-        let nameStr = b.displayName;
-
-        if (b.isCurrent) {
-          prefix = '{green-fg}* {/green-fg}';
-          nameStr = `{bold}{green-fg}${b.displayName}{/green-fg}{/bold}`;
-        } else if (b.isRemote) {
-          nameStr = `{gray-fg}${b.displayName}{/gray-fg}`;
-        }
-
-        return `${prefix}${nameStr}`;
-      });
-
-      this.branchList.setItems(listItems);
-      this.branchList.select(0);
-      this.onBranchSelected(0);
-    } catch (err) {
-      this.branchList.setItems([`{red-fg}Error: ${err.message}{/red-fg}`]);
-    }
-  }
-
-  onBranchSelected(index) {
-    if (!this.branchesData || !this.branchesData[index]) return;
-    const branch = this.branchesData[index];
-
-    const content = [
-      `{bold}Selected Branch:{/bold} ${branch.displayName}`,
-      `{bold}Type:{/bold} ${branch.isRemote ? 'Remote Branch' : 'Local Branch'}`,
-      `{bold}Is Active:{/bold} ${branch.isCurrent ? '{green-fg}YES (Currently checked out){/green-fg}' : 'No'}`,
-      '',
-      '{yellow-fg}{bold}Available Actions:{/bold}{/yellow-fg}',
-      ' • Press {cyan-fg}Enter{/cyan-fg} or click Checkout to switch branch.',
-      ' • Press {cyan-fg}b{/cyan-fg} to create a new branch based on current.',
-      ' • Press {cyan-fg}P{/cyan-fg} to push commits to remote repository.',
-      ' • Press {cyan-fg}p{/cyan-fg} to pull updates from remote repository.'
-    ].join('\n');
-
-    this.infoText.setContent(content);
-    this.screen.render();
-  }
-
-  async checkoutSelectedBranch(index) {
-    if (!this.branchesData || !this.branchesData[index]) return;
-    const branch = this.branchesData[index];
-
-    if (branch.isCurrent) {
-      this.screen.emit('notify', `Already on branch "${branch.displayName}"`);
-      return;
-    }
-
-    try {
-      await this.gitService.checkoutBranch(branch.displayName);
-      this.screen.emit('notify', `Checked out branch "${branch.displayName}"`);
+      await this.gitService.checkout(branchName);
+      this.screen.emit('notify', `${I18nService.t('checkoutSuccess')}"${branchName}"`);
       await this.refresh();
       if (this.onStatusChanged) this.onStatusChanged();
     } catch (err) {
@@ -217,9 +102,34 @@ export class BranchesView {
     }
   }
 
+  async refresh() {
+    this.updateI18nLabels();
+    try {
+      const branchData = await this.gitService.getBranches();
+      this.localBranches = branchData.local;
+      this.remoteBranches = branchData.remote;
+
+      const localItems = this.localBranches.map(b => {
+        const star = b.current ? '{green-fg}* {/green-fg}' : '  ';
+        const currentTag = b.current ? ' {green-fg}(active){/green-fg}' : '';
+        return `${star}{bold}${b.name}{/bold}${currentTag}`;
+      });
+
+      const remoteItems = this.remoteBranches.map(b => {
+        return `  {cyan-fg}${b.name}{/cyan-fg}`;
+      });
+
+      this.localList.setItems(localItems.length ? localItems : ['{gray-fg}No local branches{/gray-fg}']);
+      this.remoteList.setItems(remoteItems.length ? remoteItems : ['{gray-fg}No remote branches{/gray-fg}']);
+      this.screen.render();
+    } catch (err) {
+      this.localList.setItems([`{red-fg}Error: ${err.message}{/red-fg}`]);
+    }
+  }
+
   show() {
     this.container.show();
-    this.branchList.focus();
+    this.localList.focus();
     this.refresh();
   }
 
