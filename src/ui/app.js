@@ -527,7 +527,10 @@ export class App {
     this.screen.on('execute-push', () => this.executePush());
     this.screen.on('execute-pull', () => this.executePull());
 
+    // Fluid responsive layout handler for terminal resize / Ctrl+Scroll Zoom
     this.screen.on('resize', () => {
+      this.updateI18nLabels();
+      this.refreshGlobalHeader();
       this.screen.render();
     });
   }
