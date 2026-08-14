@@ -1,6 +1,6 @@
 import blessed from 'blessed';
 import path from 'path';
-import { RepoStore } from '../../git/repo-store.js';
+import { RepoStore, copyPathToClipboard } from '../../git/repo-store.js';
 import { RepoScanner } from '../../git/repo-scanner.js';
 import { I18nService } from '../../git/i18n-service.js';
 
@@ -168,6 +168,15 @@ export class ReposView {
       this.onItemSelected(index);
     });
 
+    this.repoList.key(['y', 'C-c'], () => {
+      const idx = this.repoList.selected;
+      if (this.combinedRepos && this.combinedRepos[idx]) {
+        const p = this.combinedRepos[idx].path;
+        copyPathToClipboard(p);
+        this.app.notify(`✓ Copied repository path to clipboard: ${p}`);
+      }
+    });
+
     this.repoList.key(['enter'], async () => {
       const idx = this.repoList.selected;
       if (this.combinedRepos[idx]) {
@@ -235,7 +244,8 @@ export class ReposView {
       `{bold}${I18nService.t('localPathLabel')}{/bold}      ${item.path}`,
       item.url ? `{bold}${I18nService.t('remoteUrlLabel')}{/bold}      ${item.url}` : '',
       '',
-      '{yellow-fg}{bold}Action:{/bold}{/yellow-fg}',
+      '{yellow-fg}{bold}Actions:{/bold}{/yellow-fg}',
+      ' • Press {cyan-fg}y / Ctrl+C{/cyan-fg} to copy this path to system clipboard.',
       ' • Press {cyan-fg}Enter{/cyan-fg} or click Switch Repo to jump directly to this repository.',
       ' • Press {magenta-fg}s{/magenta-fg} or click Scan System to auto-discover all Git repos from /.'
     ].filter(Boolean).join('\n');

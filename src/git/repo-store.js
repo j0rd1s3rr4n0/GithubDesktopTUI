@@ -1,8 +1,20 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
+import { exec } from 'child_process';
 
 const STORE_PATH = path.join(os.homedir(), '.gitu_history.json');
+
+export function copyPathToClipboard(pathStr) {
+  try {
+    if (!pathStr) return false;
+    const escaped = pathStr.replace(/"/g, '\\"');
+    exec(`echo -n "${escaped}" | xclip -selection clipboard 2>/dev/null || echo -n "${escaped}" | wl-copy 2>/dev/null`);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 export class RepoStore {
   static load() {

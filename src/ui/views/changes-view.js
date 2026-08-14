@@ -1,6 +1,7 @@
 import blessed from 'blessed';
 import { DiffViewer } from '../components/diff-viewer.js';
 import { I18nService } from '../../git/i18n-service.js';
+import { copyPathToClipboard } from '../../git/repo-store.js';
 
 export class ChangesView {
   constructor(screen, gitService, options = {}) {
@@ -219,6 +220,15 @@ export class ChangesView {
 
     this.fileList.on('select item', (item, index) => {
       this.onFileSelected(index);
+    });
+
+    this.fileList.key(['y', 'C-c'], () => {
+      const idx = this.fileList.selected;
+      if (this.filesData && this.filesData[idx]) {
+        const filePath = this.filesData[idx].path;
+        copyPathToClipboard(filePath);
+        this.screen.emit('notify', `✓ Copied file path to clipboard: ${filePath}`);
+      }
     });
 
     this.fileList.key(['space'], () => {
