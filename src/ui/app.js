@@ -137,9 +137,47 @@ export class App {
       style: {
         border: { fg: 'gray' },
         bg: 'black'
-      }
+      },
+      mouse: true
     });
     this.screen.append(this.tabBar);
+
+    // Clickable Interactive Tab Buttons
+    this.tabButtons = [];
+    const tabLabels = [
+      '[1] Changes',
+      '[2] History',
+      '[3] Branches',
+      '[4] Stash',
+      '[5] GitHub',
+      '[6] Repositories'
+    ];
+
+    let currentLeft = 1;
+    tabLabels.forEach((label, idx) => {
+      const btn = blessed.button({
+        parent: this.tabBar,
+        top: 0,
+        left: currentLeft,
+        height: 1,
+        width: label.length + 2,
+        content: ` ${label} `,
+        tags: true,
+        style: {
+          bg: 'black',
+          fg: 'gray',
+          focus: { bg: 'blue', fg: 'white' }
+        },
+        mouse: true,
+        keys: true
+      });
+
+      btn.on('click', () => this.switchTab(idx));
+      btn.on('press', () => this.switchTab(idx));
+
+      this.tabButtons.push(btn);
+      currentLeft += label.length + 3;
+    });
 
     // Notification Bar at bottom
     this.notificationBar = blessed.box({
@@ -153,7 +191,7 @@ export class App {
         fg: 'white',
         bold: true
       },
-      content: ' Press [?] Ayuda | [F2] About | [6] Repos | [L] Auth | [S-q] Salir'
+      content: ' Click Tabs or press 1-6 | [?] Ayuda | [F2] About | [L] Auth | [S-q] Salir'
     });
     this.screen.append(this.notificationBar);
 
@@ -210,23 +248,17 @@ export class App {
   }
 
   updateTabBar() {
-    const tabs = [
-      '[1] Changes',
-      '[2] History',
-      '[3] Branches',
-      '[4] Stash',
-      '[5] GitHub',
-      '[6] Repositories'
-    ];
-
-    const formattedTabs = tabs.map((tab, idx) => {
+    this.tabButtons.forEach((btn, idx) => {
       if (idx === this.activeTab) {
-        return `{bold}{black-bg}{cyan-fg} ${tab} {/cyan-fg}{/black-bg}{/bold}`;
+        btn.style.bg = 'blue';
+        btn.style.fg = 'white';
+        btn.style.bold = true;
+      } else {
+        btn.style.bg = 'black';
+        btn.style.fg = 'gray';
+        btn.style.bold = false;
       }
-      return `{gray-fg} ${tab} {/gray-fg}`;
     });
-
-    this.tabBar.setContent(` Tabs: ${formattedTabs.join(' | ')}`);
     this.screen.render();
   }
 
@@ -266,7 +298,7 @@ export class App {
     this.screen.render();
     if (this.notifyTimeout) clearTimeout(this.notifyTimeout);
     this.notifyTimeout = setTimeout(() => {
-      this.notificationBar.setContent(' Press [?] Ayuda | [F2] About | [6] Repos | [L] Auth | [S-q] Salir');
+      this.notificationBar.setContent(' Click Tabs or press 1-6 | [?] Ayuda | [F2] About | [L] Auth | [S-q] Salir');
       this.screen.render();
     }, 4000);
   }
@@ -400,6 +432,15 @@ export class App {
     this.screen.key(['4'], () => this.switchTab(3));
     this.screen.key(['5'], () => this.switchTab(4));
     this.screen.key(['6'], () => this.switchTab(5));
+
+    // Next / Previous Tab cycle hotkeys
+    this.screen.key(['C-right', '>'], () => {
+      this.switchTab((this.activeTab + 1) % 6);
+    });
+
+    this.screen.key(['C-left', '<'], () => {
+      this.switchTab((this.activeTab - 1 + 6) % 6);
+    });
 
     this.screen.key(['f1', '?'], () => {
       this.helpModal.toggle();
