@@ -1,6 +1,7 @@
 import blessed from 'blessed';
 import path from 'path';
 import { RepoStore } from '../../git/repo-store.js';
+import { RepoScanner } from '../../git/repo-scanner.js';
 import { I18nService } from '../../git/i18n-service.js';
 
 export class ReposView {
@@ -64,7 +65,7 @@ export class ReposView {
 
     this.switchBtn = blessed.button({
       parent: this.detailBox,
-      top: 10,
+      top: 9,
       left: 2,
       width: 24,
       height: 1,
@@ -72,6 +73,23 @@ export class ReposView {
       style: {
         bg: 'green',
         fg: 'black',
+        bold: true,
+        focus: { bg: 'yellow', fg: 'black' }
+      },
+      mouse: true,
+      keys: true
+    });
+
+    this.scanBtn = blessed.button({
+      parent: this.detailBox,
+      top: 12,
+      left: 2,
+      width: 34,
+      height: 1,
+      content: ' [s] Scan System for Repos (from /) ',
+      style: {
+        bg: 'magenta',
+        fg: 'white',
         bold: true,
         focus: { bg: 'yellow', fg: 'black' }
       },
@@ -157,6 +175,10 @@ export class ReposView {
       }
     });
 
+    this.repoList.key(['s'], () => {
+      this.startSystemScan();
+    });
+
     const doSwitchSelected = async () => {
       const idx = this.repoList.selected;
       if (this.combinedRepos[idx]) {
@@ -166,6 +188,9 @@ export class ReposView {
 
     this.switchBtn.on('press', doSwitchSelected);
     this.switchBtn.on('click', doSwitchSelected);
+
+    this.scanBtn.on('press', () => this.startSystemScan());
+    this.scanBtn.on('click', () => this.startSystemScan());
 
     const triggerPathSwitch = async () => {
       const target = this.pathInput.getValue().trim();
@@ -177,6 +202,25 @@ export class ReposView {
     this.pathInput.key(['enter'], triggerPathSwitch);
     this.pathSwitchBtn.on('press', triggerPathSwitch);
     this.pathSwitchBtn.on('click', triggerPathSwitch);
+  }
+
+  startSystemScan() {
+    if (RepoScanner.isScanning) {
+      this.app.notify('System scan already running in background...');
+      return;
+    }
+
+    this.app.notify('🔍 Scanning system from / for Git repositories...');
+    this.scanBtn.setContent(' ⌛ Scanning System... ');
+
+    RepoScanner.scanSystem('/', (foundPath, totalFound) => {
+      this.app.notify(`🔍 [Scan] Found ${totalFound} Git repos so far (${path.basename(foundPath)})`);
+      this.refresh();
+    }, (foundRepos) => {
+      this.scanBtn.setContent(' [s] Scan System for Repos (from /) ');
+      this.app.notify(`✓ System scan complete! Discovered ${foundRepos.length} repositories.`);
+      this.refresh();
+    });
   }
 
   onItemSelected(index) {
@@ -192,7 +236,8 @@ export class ReposView {
       item.url ? `{bold}${I18nService.t('remoteUrlLabel')}{/bold}      ${item.url}` : '',
       '',
       '{yellow-fg}{bold}Action:{/bold}{/yellow-fg}',
-      ' • Press {cyan-fg}Enter{/cyan-fg} or click Switch Repo to jump directly to this repository.'
+      ' • Press {cyan-fg}Enter{/cyan-fg} or click Switch Repo to jump directly to this repository.',
+      ' • Press {magenta-fg}s{/magenta-fg} or click Scan System to auto-discover all Git repos from /.'
     ].filter(Boolean).join('\n');
 
     this.infoText.setContent(content);
