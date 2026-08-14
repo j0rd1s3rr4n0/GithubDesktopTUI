@@ -1,5 +1,5 @@
 import blessed from 'blessed';
-import { spawnSync, execAsync } from 'child_process';
+import { spawnSync } from 'child_process';
 import util from 'util';
 
 export class AuthModal {
