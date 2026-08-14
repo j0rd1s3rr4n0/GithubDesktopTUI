@@ -59,7 +59,8 @@ export class ChangesView {
         border: { fg: 'yellow' },
         focus: { border: { fg: 'yellow' } }
       },
-      keys: true
+      keys: true,
+      mouse: true
     });
 
     blessed.text({
@@ -81,7 +82,8 @@ export class ChangesView {
         border: { fg: 'gray' },
         focus: { border: { fg: 'green' }, bg: 'black' }
       },
-      inputOnFocus: true
+      inputOnFocus: true,
+      mouse: true
     });
 
     blessed.text({
@@ -103,7 +105,8 @@ export class ChangesView {
         border: { fg: 'gray' },
         focus: { border: { fg: 'green' }, bg: 'black' }
       },
-      inputOnFocus: true
+      inputOnFocus: true,
+      mouse: true
     });
 
     this.commitBtn = blessed.button({
@@ -119,7 +122,9 @@ export class ChangesView {
         fg: 'black',
         bold: true,
         focus: { bg: 'yellow', fg: 'black' }
-      }
+      },
+      mouse: true,
+      keys: true
     });
 
     // Right Column: Diff Viewer
@@ -142,6 +147,22 @@ export class ChangesView {
   }
 
   setupEvents() {
+    this.fileList.on('click', () => {
+      this.fileList.focus();
+    });
+
+    this.summaryInput.on('click', () => {
+      this.summaryInput.focus();
+    });
+
+    this.descInput.on('click', () => {
+      this.descInput.focus();
+    });
+
+    this.diffViewer.box.on('click', () => {
+      this.diffViewer.box.focus();
+    });
+
     this.fileList.on('select item', (item, index) => {
       this.onFileSelected(index);
     });
@@ -172,6 +193,10 @@ export class ChangesView {
     });
 
     this.commitBtn.on('press', () => {
+      this.executeCommit();
+    });
+
+    this.commitBtn.on('click', () => {
       this.executeCommit();
     });
   }

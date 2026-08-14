@@ -74,7 +74,9 @@ export class ReposView {
         fg: 'black',
         bold: true,
         focus: { bg: 'yellow', fg: 'black' }
-      }
+      },
+      mouse: true,
+      keys: true
     });
 
     // Bottom Path Input Form
@@ -88,7 +90,8 @@ export class ReposView {
       border: { type: 'line' },
       style: {
         border: { fg: 'green' }
-      }
+      },
+      mouse: true
     });
 
     this.pathInput = blessed.textbox({
@@ -102,7 +105,8 @@ export class ReposView {
         fg: 'white',
         focus: { bg: 'blue', fg: 'white' }
       },
-      inputOnFocus: true
+      inputOnFocus: true,
+      mouse: true
     });
 
     this.pathSwitchBtn = blessed.button({
@@ -118,7 +122,9 @@ export class ReposView {
         fg: 'black',
         bold: true,
         focus: { bg: 'yellow', fg: 'black' }
-      }
+      },
+      mouse: true,
+      keys: true
     });
 
     this.combinedRepos = [];
@@ -127,6 +133,14 @@ export class ReposView {
   }
 
   setupEvents() {
+    this.repoList.on('click', () => {
+      this.repoList.focus();
+    });
+
+    this.pathInput.on('click', () => {
+      this.pathInput.focus();
+    });
+
     this.repoList.on('select item', (item, index) => {
       this.onItemSelected(index);
     });
@@ -138,12 +152,15 @@ export class ReposView {
       }
     });
 
-    this.switchBtn.on('press', async () => {
+    const doSwitchSelected = async () => {
       const idx = this.repoList.selected;
       if (this.combinedRepos[idx]) {
         await this.app.switchRepositoryPath(this.combinedRepos[idx].path);
       }
-    });
+    };
+
+    this.switchBtn.on('press', doSwitchSelected);
+    this.switchBtn.on('click', doSwitchSelected);
 
     const triggerPathSwitch = async () => {
       const target = this.pathInput.getValue().trim();
@@ -154,6 +171,7 @@ export class ReposView {
 
     this.pathInput.key(['enter'], triggerPathSwitch);
     this.pathSwitchBtn.on('press', triggerPathSwitch);
+    this.pathSwitchBtn.on('click', triggerPathSwitch);
   }
 
   onItemSelected(index) {

@@ -322,6 +322,27 @@ export class App {
       process.exit(0);
     });
 
+    // Mouse scroll wheel support (wheelup / wheeldown)
+    this.screen.on('element wheelup', (el) => {
+      if (el && typeof el.scroll === 'function') {
+        el.scroll(-2);
+        this.screen.render();
+      } else if (el && typeof el.up === 'function') {
+        el.up();
+        this.screen.render();
+      }
+    });
+
+    this.screen.on('element wheeldown', (el) => {
+      if (el && typeof el.scroll === 'function') {
+        el.scroll(2);
+        this.screen.render();
+      } else if (el && typeof el.down === 'function') {
+        el.down();
+        this.screen.render();
+      }
+    });
+
     // Lowercase 'q' quits app ONLY when no modal/window is open
     this.screen.key(['q'], () => {
       if (!this.hasOpenModal()) {
