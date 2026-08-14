@@ -24,6 +24,7 @@ import { RepoBrowserModal } from './modals/repo-browser-modal.js';
 import { CloneDestinationModal } from './modals/clone-destination-modal.js';
 import { ErrorModal } from './modals/error-modal.js';
 import { ReadmeModal } from './modals/readme-modal.js';
+import { MarkdownDiffModal } from './modals/markdown-diff-modal.js';
 
 export class App {
   constructor(targetRepoPath = process.cwd()) {
@@ -228,6 +229,7 @@ export class App {
     this.confirmModal = new ConfirmModal(this.screen);
     this.errorModal = new ErrorModal(this.screen);
     this.readmeModal = new ReadmeModal(this.screen, this.gitService);
+    this.markdownDiffModal = new MarkdownDiffModal(this.screen);
 
     this.authModal = new AuthModal(this.screen, this.ghService, async () => {
       await this.refreshGlobalHeader();
@@ -364,6 +366,7 @@ export class App {
       (this.helpModal && this.helpModal.modal && this.helpModal.modal.visible) ||
       (this.aboutModal && this.aboutModal.modal && this.aboutModal.modal.visible) ||
       (this.readmeModal && this.readmeModal.box && this.readmeModal.box.visible) ||
+      (this.markdownDiffModal && this.markdownDiffModal.box && this.markdownDiffModal.box.visible) ||
       (this.authModal && this.authModal.box && this.authModal.box.visible) ||
       (this.branchModal && this.branchModal.form && this.branchModal.form.visible) ||
       (this.stashModal && this.stashModal.form && this.stashModal.form.visible) ||
@@ -378,7 +381,10 @@ export class App {
 
   closeTopModal() {
     let closed = false;
-    if (this.readmeModal && this.readmeModal.box && this.readmeModal.box.visible) {
+    if (this.markdownDiffModal && this.markdownDiffModal.box && this.markdownDiffModal.box.visible) {
+      this.markdownDiffModal.hide();
+      closed = true;
+    } else if (this.readmeModal && this.readmeModal.box && this.readmeModal.box.visible) {
       this.readmeModal.hide();
       closed = true;
     } else if (this.cloneDestModal && this.cloneDestModal.box && this.cloneDestModal.box.visible) {
@@ -558,6 +564,9 @@ export class App {
     this.screen.on('trigger-gh-auth', () => this.handleGhAuthDirect());
     this.screen.on('open-branch-modal', () => this.branchModal.show());
     this.screen.on('open-stash-modal', () => this.stashModal.show());
+    this.screen.on('open-markdown-diff', (rawDiff, filePath) => {
+      this.markdownDiffModal.show(rawDiff, filePath);
+    });
     this.screen.on('execute-push', () => this.executePush());
     this.screen.on('execute-pull', () => this.executePull());
 

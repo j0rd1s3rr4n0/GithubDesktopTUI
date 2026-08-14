@@ -139,6 +139,7 @@ export class ChangesView {
     this.filesData = [];
     this.summaryDraft = '';
     this.descDraft = '';
+    this.currentRawDiff = '';
 
     this.setupEvents();
   }
@@ -155,6 +156,12 @@ export class ChangesView {
 
   isInputFocused() {
     return Boolean((this.summaryInput && this.summaryInput.focused) || (this.descInput && this.descInput.focused));
+  }
+
+  isMarkdownFile(filePath) {
+    if (!filePath) return false;
+    const lower = filePath.toLowerCase();
+    return lower.endsWith('.md') || lower.endsWith('.markdown') || lower.includes('readme');
   }
 
   setupEvents() {
@@ -231,6 +238,18 @@ export class ChangesView {
       }
     });
 
+    this.fileList.key(['S-r', 'r'], () => {
+      const idx = this.fileList.selected;
+      if (this.filesData && this.filesData[idx]) {
+        const file = this.filesData[idx];
+        if (this.isMarkdownFile(file.path)) {
+          this.screen.emit('open-markdown-diff', this.currentRawDiff, file.path);
+        } else {
+          this.screen.emit('notify', `File "${file.path}" is not a Markdown file (.md / .MD).`);
+        }
+      }
+    });
+
     this.fileList.key(['space'], () => {
       const idx = this.fileList.selected;
       this.toggleStageFile(idx);
@@ -285,7 +304,8 @@ export class ChangesView {
         else if (file.status === 'D') badge = '{red-fg}D{/red-fg}';
         else if (file.status === '?') badge = '{magenta-fg}?{/magenta-fg}';
 
-        return `${checkbox} ${badge} ${file.path}`;
+        const mdBadge = this.isMarkdownFile(file.path) ? ' {magenta-fg}[R]{/magenta-fg}' : '';
+        return `${checkbox} ${badge} ${file.path}${mdBadge}`;
       });
 
       const currentIdx = Math.min(this.fileList.selected || 0, listItems.length - 1);
@@ -301,7 +321,14 @@ export class ChangesView {
     if (!this.filesData || !this.filesData[index]) return;
     const file = this.filesData[index];
     const diff = await this.gitService.getFileDiff(file.path, file.staged);
+    this.currentRawDiff = diff;
     this.diffViewer.setContent(diff);
+
+    if (this.isMarkdownFile(file.path)) {
+      this.diffViewer.box.setLabel(` {bold}${I18nService.t('diffLabel')} {magenta-fg}[R] Read Interpreted MD{/magenta-fg}{/bold} `);
+    } else {
+      this.diffViewer.box.setLabel(` {bold}${I18nService.t('diffLabel')}{/bold} `);
+    }
     this.screen.render();
   }
 
