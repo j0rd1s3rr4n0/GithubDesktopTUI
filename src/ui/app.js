@@ -18,6 +18,7 @@ import { ConfirmModal } from './modals/confirm-modal.js';
 import { InitModal } from './modals/init-modal.js';
 import { AuthModal } from './modals/auth-modal.js';
 import { RepoBrowserModal } from './modals/repo-browser-modal.js';
+import { CloneDestinationModal } from './modals/clone-destination-modal.js';
 import { ErrorModal } from './modals/error-modal.js';
 
 export class App {
@@ -95,10 +96,10 @@ export class App {
   }
 
   showRepoBrowserModal() {
-    if (!this.repoBrowserModal) {
-      this.repoBrowserModal = new RepoBrowserModal(this.screen, this.ghService, async (repoTarget) => {
+    if (!this.cloneDestModal) {
+      this.cloneDestModal = new CloneDestinationModal(this.screen, async (repoTarget, destinationParentDir) => {
         this.notify(`Cloning ${repoTarget}...`);
-        const res = await this.ghService.cloneRepo(repoTarget, this.gitService.repoPath);
+        const res = await this.ghService.cloneRepo(repoTarget, destinationParentDir);
         if (res.success) {
           if (res.clonedPath) {
             const repoName = path.basename(res.clonedPath);
@@ -109,6 +110,12 @@ export class App {
         } else {
           this.errorModal.showError('Clone Repository Failed', res.error);
         }
+      });
+    }
+
+    if (!this.repoBrowserModal) {
+      this.repoBrowserModal = new RepoBrowserModal(this.screen, this.ghService, (repoTarget) => {
+        this.cloneDestModal.prompt(repoTarget, this.gitService.repoPath);
       });
     }
     this.repoBrowserModal.show();
@@ -273,6 +280,7 @@ export class App {
       (this.stashModal && this.stashModal.form && this.stashModal.form.visible) ||
       (this.confirmModal && this.confirmModal.box && this.confirmModal.box.visible) ||
       (this.errorModal && this.errorModal.box && this.errorModal.box.visible) ||
+      (this.cloneDestModal && this.cloneDestModal.box && this.cloneDestModal.box.visible) ||
       (this.initModal && this.initModal.box && this.initModal.box.visible) ||
       (this.initModal && this.initModal.repoBrowserModal && this.initModal.repoBrowserModal.box && this.initModal.repoBrowserModal.box.visible) ||
       (this.repoBrowserModal && this.repoBrowserModal.box && this.repoBrowserModal.box.visible)
@@ -280,6 +288,10 @@ export class App {
   }
 
   closeTopModal() {
+    if (this.cloneDestModal && this.cloneDestModal.box && this.cloneDestModal.box.visible) {
+      this.cloneDestModal.hide();
+      return true;
+    }
     if (this.aboutModal && this.aboutModal.modal && this.aboutModal.modal.visible) {
       this.aboutModal.hide();
       return true;

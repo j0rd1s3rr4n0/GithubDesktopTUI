@@ -1,5 +1,6 @@
 import blessed from 'blessed';
 import { RepoBrowserModal } from './repo-browser-modal.js';
+import { CloneDestinationModal } from './clone-destination-modal.js';
 
 export class InitModal {
   constructor(screen, gitService, ghService, onDoneCallback) {
@@ -148,12 +149,18 @@ export class InitModal {
         border: { fg: 'cyan' },
         focus: { border: { fg: 'yellow' }, bg: 'blue' }
       },
-      inputOnFocus: true
+      inputOnFocus: true,
+      mouse: true
+    });
+
+    // Destination Selector Modal
+    this.cloneDestModal = new CloneDestinationModal(screen, async (repoTarget, destinationParentDir) => {
+      await this.executeClone(repoTarget, destinationParentDir);
     });
 
     // Repo Browser Modal
-    this.repoBrowserModal = new RepoBrowserModal(screen, ghService, async (repoTarget) => {
-      await this.executeClone(repoTarget);
+    this.repoBrowserModal = new RepoBrowserModal(screen, ghService, (repoTarget) => {
+      this.cloneDestModal.prompt(repoTarget, this.gitService.repoPath);
     });
 
     this.setupEvents();
@@ -200,10 +207,11 @@ export class InitModal {
     this.quitAppBtn.on('press', () => process.exit(0));
     this.quitAppBtn.on('click', () => process.exit(0));
 
-    this.cloneInput.key(['enter'], async () => {
+    this.cloneInput.key(['enter'], () => {
       const repoTarget = this.cloneInput.getValue().trim();
       if (!repoTarget) return;
-      await this.executeClone(repoTarget);
+      this.cloneInput.hide();
+      this.cloneDestModal.prompt(repoTarget, this.gitService.repoPath);
     });
 
     this.cloneInput.key(['escape'], () => {
@@ -212,12 +220,11 @@ export class InitModal {
     });
   }
 
-  async executeClone(repoTarget) {
-    this.text.setContent(`{cyan-fg}Cloning ${repoTarget}... Please wait.{/cyan-fg}`);
-    this.cloneInput.hide();
+  async executeClone(repoTarget, destinationParentDir) {
+    this.text.setContent(`{cyan-fg}Cloning ${repoTarget} into ${destinationParentDir}... Please wait.{/cyan-fg}`);
     this.screen.render();
 
-    const res = await this.ghService.cloneRepo(repoTarget, this.gitService.repoPath);
+    const res = await this.ghService.cloneRepo(repoTarget, destinationParentDir);
     if (res.success) {
       this.hide();
       if (this.onDone) this.onDone('cloned', res.clonedPath);
