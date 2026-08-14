@@ -71,6 +71,7 @@ export class HistoryView {
     this.rightCol.append(this.patchViewer.box);
 
     this.commitsData = [];
+    this.currentCommitHash = null;
     this.currentPatch = '';
     this.currentMdFile = null;
 
@@ -80,7 +81,7 @@ export class HistoryView {
   updateI18nLabels() {
     this.commitList.setLabel(` {bold}${I18nService.t('commitLogLabel')}{/bold} `);
     if (this.currentMdFile) {
-      this.patchViewer.box.setLabel(` {bold}${I18nService.t('commitPatchLabel')} {magenta-fg}[R] Read Interpreted MD (${this.currentMdFile}){/magenta-fg}{/bold} `);
+      this.patchViewer.box.setLabel(` {bold}${I18nService.t('commitPatchLabel')} {magenta-fg}[R] Read full MD (${this.currentMdFile})  [D] View Diff{/magenta-fg}{/bold} `);
     } else {
       this.patchViewer.box.setLabel(` {bold}${I18nService.t('commitPatchLabel')}{/bold} `);
     }
@@ -122,11 +123,26 @@ export class HistoryView {
       }
     });
 
-    this.commitList.key(['S-r', 'r'], () => {
+    // Press 'r' / 'R' -> Read COMPLETE full Markdown file as formatted README
+    this.commitList.key(['S-r', 'r'], async () => {
+      if (this.currentMdFile && this.currentCommitHash) {
+        const content = await this.gitService.getFileContentAtCommit(this.currentCommitHash, this.currentMdFile);
+        if (content !== null) {
+          this.screen.emit('open-readme-content', content, `${this.currentMdFile} @ ${this.currentCommitHash.slice(0, 7)}`);
+        } else {
+          this.screen.emit('notify', `Could not read full file "${this.currentMdFile}" at commit ${this.currentCommitHash.slice(0, 7)}.`);
+        }
+      } else {
+        this.screen.emit('notify', 'No Markdown file (.md / .MD / README) modified in this commit.');
+      }
+    });
+
+    // Press 'd' / 'D' -> View Markdown Diff (Red/Green/White)
+    this.commitList.key(['S-d', 'd'], () => {
       if (this.currentMdFile && this.currentPatch) {
         this.screen.emit('open-markdown-diff', this.currentPatch, this.currentMdFile);
       } else {
-        this.screen.emit('notify', 'No Markdown file (.md / .MD / README) modified in this commit diff.');
+        this.screen.emit('notify', 'No Markdown file diff available for this commit.');
       }
     });
   }
@@ -158,6 +174,7 @@ export class HistoryView {
   async onCommitSelected(index) {
     if (!this.commitsData || !this.commitsData[index]) return;
     const commit = this.commitsData[index];
+    this.currentCommitHash = commit.hash;
 
     const metaContent = [
       `{bold}Commit:{/bold} {yellow-fg}${commit.hash}{/yellow-fg}`,
@@ -175,7 +192,7 @@ export class HistoryView {
     this.patchViewer.setContent(details.patch);
 
     if (this.currentMdFile) {
-      this.patchViewer.box.setLabel(` {bold}${I18nService.t('commitPatchLabel')} {magenta-fg}[R] Read Interpreted MD (${this.currentMdFile}){/magenta-fg}{/bold} `);
+      this.patchViewer.box.setLabel(` {bold}${I18nService.t('commitPatchLabel')} {magenta-fg}[R] Read full MD (${this.currentMdFile})  [D] View Diff{/magenta-fg}{/bold} `);
     } else {
       this.patchViewer.box.setLabel(` {bold}${I18nService.t('commitPatchLabel')}{/bold} `);
     }

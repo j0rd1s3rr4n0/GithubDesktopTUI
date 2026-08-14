@@ -138,6 +138,14 @@ export class GitService {
     }
   }
 
+  async getFileContentAtCommit(commitHash, filepath) {
+    try {
+      return await this.git.show([`${commitHash}:${filepath}`]);
+    } catch (err) {
+      return null;
+    }
+  }
+
   async stageFile(filepath) {
     await this.git.add(filepath);
   }

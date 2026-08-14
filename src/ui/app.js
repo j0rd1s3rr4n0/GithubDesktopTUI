@@ -584,6 +584,9 @@ export class App {
     this.screen.on('open-markdown-diff', (rawDiff, filePath) => {
       this.markdownDiffModal.show(rawDiff, filePath);
     });
+    this.screen.on('open-readme-content', (rawText, title) => {
+      this.readmeModal.showContent(rawText, title);
+    });
     this.screen.on('execute-push', () => this.executePush());
     this.screen.on('execute-pull', () => this.executePull());
 

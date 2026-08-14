@@ -274,6 +274,23 @@ export class ReadmeModal {
     return null;
   }
 
+  showContent(rawText, title = 'README') {
+    this.currentReadmePath = title;
+    this.box.setLabel(` {bold}{cyan-fg}📖 Interpreted Markdown (${title}){/cyan-fg}{/bold} `);
+
+    const interpreted = this.interpretMarkdown(rawText);
+    this.contentBox.setContent(interpreted);
+
+    this.screen.append(this.box);
+    this.box.setFront();
+    this.box.show();
+    this.contentBox.focus();
+
+    if (this.screen.program) this.screen.program.clear();
+    if (typeof this.screen.alloc === 'function') this.screen.alloc();
+    this.screen.render();
+  }
+
   show() {
     const readmePath = this.findReadmeFile();
     this.currentReadmePath = readmePath;
