@@ -22,12 +22,12 @@ export class AboutView {
       hidden: true
     });
 
-    // Left Column: Developer Profile Box with Edge-to-Edge Avatar & GitHub Stats
+    // Left Column: Developer Profile Box with 1.5x Wider Avatar & GitHub Stats
     this.profileBox = blessed.box({
       parent: this.container,
       top: 0,
       left: 0,
-      width: '46%',
+      width: '54%',
       height: '100%',
       label: ' {bold}{magenta-fg}👨‍💻 Creator Profile & Live Avatar{/magenta-fg}{/bold} ',
       tags: true,
@@ -40,12 +40,12 @@ export class AboutView {
       scrollbar: { ch: '█', style: { fg: 'magenta' } }
     });
 
-    // Container for Full Edge-to-Edge TrueColor Avatar Image (42x42 px = 42 cols x 21 rows)
+    // Container for 1.5x Wider TrueColor Avatar Image (63x42 px = 63 cols x 21 rows)
     this.avatarBox = blessed.box({
       parent: this.profileBox,
       top: 0,
-      left: 0,
-      width: '100%-2',
+      left: 'center',
+      width: 65,
       height: 21,
       tags: false,
       align: 'center'
@@ -65,8 +65,8 @@ export class AboutView {
     this.infoBox = blessed.box({
       parent: this.container,
       top: 0,
-      left: '46%',
-      width: '54%',
+      left: '54%',
+      width: '46%',
       height: '100%',
       label: ' {bold}{cyan-fg}🐙 Application & Settings{/cyan-fg}{/bold} ',
       tags: true,
@@ -83,7 +83,7 @@ export class AboutView {
       parent: this.infoBox,
       bottom: 2,
       left: 2,
-      width: 34,
+      width: 32,
       height: 1,
       content: ' [F3] Switch Language ',
       style: {
@@ -149,7 +149,7 @@ try:
 except AttributeError:
     resample = Image.LANCZOS
 
-img = Image.open(img_path).resize((42, 42), resample).convert("RGB")
+img = Image.open(img_path).resize((63, 42), resample).convert("RGB")
 w, h = img.size
 
 lines = []
@@ -253,7 +253,7 @@ print("\\n".join(lines))
       `  • {green-fg}4: Stash{/green-fg}       - Stash drawer manager`,
       `  • {green-fg}5: GitHub{/green-fg}      - Pull Requests, Issues & Repositories`,
       `  • {green-fg}6: Repositories{/green-fg}- Unified local & cloned repo switcher`,
-      `  • {green-fg}7: About{/green-fg}       - Full Edge-to-Edge Avatar & i18n`,
+      `  • {green-fg}7: About{/green-fg}       - 1.5x Wider Avatar & i18n`,
       `  • {green-fg}8: My Account{/green-fg}  - User Profile & Code Statistics`,
       '',
       `{bold}{yellow-fg}Active Language:{/yellow-fg}{/bold} {green-fg}${currentLang}{/green-fg}`
