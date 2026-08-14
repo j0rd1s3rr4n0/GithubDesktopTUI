@@ -40,23 +40,24 @@ export class AboutView {
       scrollbar: { ch: '█', style: { fg: 'magenta' } }
     });
 
-    // Container for ANSI image widget
-    this.avatarContainer = blessed.box({
+    // Container for ANSI TrueColor Avatar Image
+    this.avatarBox = blessed.box({
       parent: this.profileBox,
-      top: 0,
+      top: 1,
       left: 'center',
-      width: 24,
-      height: 10,
-      tags: true
+      width: 30,
+      height: 8,
+      tags: false,
+      align: 'center'
     });
 
     // Text box for text details below avatar
     this.profileDetailsBox = blessed.box({
       parent: this.profileBox,
-      top: 10,
+      top: 9,
       left: 0,
       width: '100%-2',
-      height: '100%-12',
+      height: '100%-11',
       tags: true
     });
 
@@ -134,6 +135,38 @@ export class AboutView {
     this.refreshBtn.on('click', refreshProfile);
   }
 
+  async generateAnsiAvatar(imagePath) {
+    const pyScript = `
+from PIL import Image
+import os, sys
+
+img_path = "${imagePath}"
+if not os.path.exists(img_path):
+    sys.exit(1)
+
+img = Image.open(img_path).resize((28, 14)).convert("RGB")
+w, h = img.size
+
+lines = []
+for y in range(0, h, 2):
+    line = ""
+    for x in range(w):
+        r1, g1, b1 = img.getpixel((x, y))
+        r2, g2, b2 = img.getpixel((x, min(y + 1, h - 1)))
+        line += f"\\x1b[38;2;{r1};{g1};{b1}m\\x1b[48;2;{r2};{g2};{b2}m▀\\x1b[0m"
+    lines.append(line)
+
+print("\\n".join(lines))
+    `;
+
+    try {
+      const { stdout } = await execAsync(`python3 -c '${pyScript}'`);
+      return stdout;
+    } catch {
+      return null;
+    }
+  }
+
   async loadProfile() {
     this.profileDetailsBox.setContent('{cyan-fg}Syncing live GitHub profile & avatar (@j0rd1s3rr4n0)...{/cyan-fg}');
     this.screen.render();
@@ -159,32 +192,22 @@ export class AboutView {
       };
     }
 
-    // Try downloading avatar image for ANSI rendering
+    // Try downloading avatar image
     try {
       const avatarUrl = userObj.avatar_url || 'https://avatars.githubusercontent.com/u/44474715?v=4';
       await execAsync(`curl -s -L "${avatarUrl}" -o "${AVATAR_CACHE_PATH}"`);
     } catch {}
 
-    // Render ANSI avatar image if file exists
+    // Render TrueColor ANSI Avatar
+    let ansiArt = null;
     if (fs.existsSync(AVATAR_CACHE_PATH)) {
-      try {
-        if (this.avatarImageWidget) {
-          this.avatarImageWidget.destroy();
-        }
-        this.avatarImageWidget = blessed.ansiimage({
-          parent: this.avatarContainer,
-          top: 0,
-          left: 'center',
-          width: 22,
-          height: 10,
-          file: AVATAR_CACHE_PATH,
-          animate: false
-        });
-      } catch {
-        this.avatarContainer.setContent('{magenta-fg}🐙 j0rd1s3rr4n0 Avatar{/magenta-fg}');
-      }
+      ansiArt = await this.generateAnsiAvatar(AVATAR_CACHE_PATH);
+    }
+
+    if (ansiArt) {
+      this.avatarBox.setContent(ansiArt);
     } else {
-      this.avatarContainer.setContent('{magenta-fg}🐙 j0rd1s3rr4n0 Avatar{/magenta-fg}');
+      this.avatarBox.setContent('\x1b[35m  🐙 j0rd1s3rr4n0 Avatar  \x1b[0m');
     }
 
     const profileContent = [
