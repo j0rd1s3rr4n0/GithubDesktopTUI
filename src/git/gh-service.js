@@ -132,12 +132,10 @@ export class GhService {
 
   async cloneRepo(repoNameWithOwner, targetBaseDir) {
     try {
-      // Extract repo name e.g. "owner/my-app" -> "my-app"
       const parts = repoNameWithOwner.split('/');
       const repoName = parts[parts.length - 1].replace(/\.git$/, '');
       const destinationDir = path.join(targetBaseDir, repoName);
 
-      // If destination directory exists and is not empty, handle error clearly
       if (fs.existsSync(destinationDir)) {
         const files = fs.readdirSync(destinationDir);
         if (files.length > 0) {
@@ -150,6 +148,17 @@ export class GhService {
 
       const { stdout, stderr } = await execAsync(`gh repo clone ${repoNameWithOwner} "${destinationDir}"`);
       return { success: true, clonedPath: destinationDir, output: stdout || stderr };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  }
+
+  async createRemoteRepo(name, isPrivate = false) {
+    try {
+      const visibilityFlag = isPrivate ? '--private' : '--public';
+      const cmd = `gh repo create "${name.replace(/"/g, '\\"')}" ${visibilityFlag} --source="${this.repoPath}" --remote=origin --push`;
+      const { stdout, stderr } = await execAsync(cmd, { cwd: this.repoPath });
+      return { success: true, output: stdout || stderr };
     } catch (err) {
       return { success: false, error: err.message };
     }

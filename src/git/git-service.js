@@ -48,6 +48,15 @@ export class GitService {
     }
   }
 
+  async hasRemoteOrigin() {
+    try {
+      const remotes = await this.git.getRemotes(true);
+      return remotes.some(r => r.name === 'origin');
+    } catch {
+      return false;
+    }
+  }
+
   async getStatus() {
     try {
       const status = await this.git.status();

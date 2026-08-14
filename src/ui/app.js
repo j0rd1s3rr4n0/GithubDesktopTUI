@@ -25,6 +25,7 @@ import { CloneDestinationModal } from './modals/clone-destination-modal.js';
 import { ErrorModal } from './modals/error-modal.js';
 import { ReadmeModal } from './modals/readme-modal.js';
 import { MarkdownDiffModal } from './modals/markdown-diff-modal.js';
+import { CreateRepoModal } from './modals/create-repo-modal.js';
 
 export class App {
   constructor(targetRepoPath = process.cwd()) {
@@ -231,6 +232,18 @@ export class App {
     this.readmeModal = new ReadmeModal(this.screen, this.gitService);
     this.markdownDiffModal = new MarkdownDiffModal(this.screen);
 
+    this.createRepoModal = new CreateRepoModal(this.screen, this.ghService, this.gitService, async (repoName, isPrivate) => {
+      this.notify(`Creating & publishing repository "${repoName}" to GitHub (${isPrivate ? 'Private' : 'Public'})...`);
+      const res = await this.ghService.createRemoteRepo(repoName, isPrivate);
+      if (res.success) {
+        this.notify(`✓ Repository "${repoName}" published to GitHub successfully!`);
+        await this.refreshGlobalHeader();
+        this.views[this.activeTab].refresh();
+      } else {
+        this.errorModal.showError('Create GitHub Repository Failed', res.error);
+      }
+    });
+
     this.authModal = new AuthModal(this.screen, this.ghService, async () => {
       await this.refreshGlobalHeader();
       this.views[this.activeTab].refresh();
@@ -365,6 +378,7 @@ export class App {
     return Boolean(
       (this.helpModal && this.helpModal.modal && this.helpModal.modal.visible) ||
       (this.aboutModal && this.aboutModal.modal && this.aboutModal.modal.visible) ||
+      (this.createRepoModal && this.createRepoModal.box && this.createRepoModal.box.visible) ||
       (this.readmeModal && this.readmeModal.box && this.readmeModal.box.visible) ||
       (this.markdownDiffModal && this.markdownDiffModal.box && this.markdownDiffModal.box.visible) ||
       (this.authModal && this.authModal.box && this.authModal.box.visible) ||
@@ -381,7 +395,10 @@ export class App {
 
   closeTopModal() {
     let closed = false;
-    if (this.markdownDiffModal && this.markdownDiffModal.box && this.markdownDiffModal.box.visible) {
+    if (this.createRepoModal && this.createRepoModal.box && this.createRepoModal.box.visible) {
+      this.createRepoModal.hide();
+      closed = true;
+    } else if (this.markdownDiffModal && this.markdownDiffModal.box && this.markdownDiffModal.box.visible) {
       this.markdownDiffModal.hide();
       closed = true;
     } else if (this.readmeModal && this.readmeModal.box && this.readmeModal.box.visible) {
@@ -550,12 +567,12 @@ export class App {
     });
 
     this.screen.key(['S-p'], async () => {
-      this.executePush();
+      await this.executePush();
     });
 
     this.screen.key(['p'], async () => {
       if (!this.hasOpenModal() && this.activeTab !== 0 && this.activeTab !== 3 && this.activeTab !== 5) {
-        this.executePull();
+        await this.executePull();
       }
     });
 
@@ -586,27 +603,57 @@ export class App {
     }
   }
 
-  executePush() {
+  async executePush() {
+    const hasRemote = await this.gitService.hasRemoteOrigin();
+    if (!hasRemote) {
+      const auth = await this.ghService.getAuthStatus();
+      if (!auth.isLoggedIn) {
+        this.errorModal.showError(
+          'GitHub Remote Origin Missing',
+          'This local Git repository does not have a remote origin linked.\n\nPlease press [L] to authenticate with GitHub CLI first so you can create & publish it.'
+        );
+        return;
+      }
+      this.createRepoModal.prompt();
+      return;
+    }
+
     this.notify('Pushing commits to remote origin...');
     RepoStore.recordPush();
-    this.gitService.push().then(() => {
+    try {
+      await this.gitService.push();
       this.notify('✓ Push completed successfully');
-      this.refreshGlobalHeader();
+      await this.refreshGlobalHeader();
       this.views[this.activeTab].refresh();
-    }).catch(err => {
+    } catch (err) {
       this.errorModal.showError('Push Failed', err);
-    });
+    }
   }
 
-  executePull() {
+  async executePull() {
+    const hasRemote = await this.gitService.hasRemoteOrigin();
+    if (!hasRemote) {
+      const auth = await this.ghService.getAuthStatus();
+      if (!auth.isLoggedIn) {
+        this.errorModal.showError(
+          'GitHub Remote Origin Missing',
+          'This local Git repository does not have a remote origin linked to pull from.\n\nPlease press [L] to authenticate with GitHub CLI first to create & link a GitHub repository.'
+        );
+        return;
+      }
+      this.createRepoModal.prompt();
+      return;
+    }
+
     this.notify('Pulling updates from remote origin...');
     RepoStore.recordPull();
-    this.gitService.pull().then(() => {
+    try {
+      await this.gitService.pull();
       this.notify('✓ Pull completed successfully');
-      this.refreshGlobalHeader();
+      await this.refreshGlobalHeader();
       this.views[this.activeTab].refresh();
-    }).catch(err => {
+    } catch (err) {
       this.errorModal.showError('Pull Failed', err);
-    });
+    }
   }
 }
