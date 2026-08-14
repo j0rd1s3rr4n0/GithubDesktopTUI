@@ -4,7 +4,7 @@ import util from 'util';
 import path from 'path';
 import os from 'os';
 import fs from 'fs';
-import { RepoStore } from '../../git/repo-store.js';
+import { RepoStore, copyPathToClipboard } from '../../git/repo-store.js';
 import { I18nService } from '../../git/i18n-service.js';
 
 const execAsync = util.promisify(exec);
@@ -35,8 +35,11 @@ export class AccountView {
       border: { type: 'line' },
       style: {
         border: { fg: 'magenta' },
-        bg: 'black'
+        bg: 'black',
+        focus: { border: { fg: 'green' } }
       },
+      keys: true,
+      mouse: true,
       scrollable: true,
       scrollbar: { ch: '█', style: { fg: 'magenta' } }
     });
@@ -58,7 +61,9 @@ export class AccountView {
       left: 0,
       width: '100%-2',
       height: '100%-19',
-      tags: true
+      tags: true,
+      mouse: true,
+      keys: true
     });
 
     // Right Column Top: Code & Activity Statistics
@@ -73,8 +78,11 @@ export class AccountView {
       border: { type: 'line' },
       style: {
         border: { fg: 'cyan' },
-        bg: 'black'
+        bg: 'black',
+        focus: { border: { fg: 'green' } }
       },
+      keys: true,
+      mouse: true,
       scrollable: true,
       scrollbar: { ch: '█', style: { fg: 'cyan' } }
     });
@@ -86,7 +94,7 @@ export class AccountView {
       left: '44%',
       width: '56%',
       height: '50%',
-      label: ' {bold}{yellow-fg}🌐 My GitHub Repositories (Select & Enter to Clone/Open){/yellow-fg}{/bold} ',
+      label: ' {bold}{yellow-fg}🌐 My GitHub Repositories (Select & Enter to Clone | y to Copy URL){/yellow-fg}{/bold} ',
       tags: true,
       border: { type: 'line' },
       style: {
@@ -119,6 +127,7 @@ export class AccountView {
     });
 
     this.userRepos = [];
+    this.currentUserObj = null;
     this.setupEvents();
   }
 
@@ -135,6 +144,22 @@ export class AccountView {
       if (this.userRepos && this.userRepos[index]) {
         const repo = this.userRepos[index];
         this.app.notify(`Selected repo: ${repo.nameWithOwner} (${repo.stargazerCount || 0} ★)`);
+      }
+    });
+
+    this.userReposList.key(['y', 'C-c'], () => {
+      const idx = this.userReposList.selected;
+      if (this.userRepos && this.userRepos[idx]) {
+        const repoUrl = this.userRepos[idx].url || `https://github.com/${this.userRepos[idx].nameWithOwner}`;
+        copyPathToClipboard(repoUrl);
+        this.app.notify(`✓ Copied repository URL to clipboard: ${repoUrl}`);
+      }
+    });
+
+    this.profileBox.key(['y', 'C-c'], () => {
+      if (this.currentUserObj && this.currentUserObj.html_url) {
+        copyPathToClipboard(this.currentUserObj.html_url);
+        this.app.notify(`✓ Copied user profile URL to clipboard: ${this.currentUserObj.html_url}`);
       }
     });
 
@@ -231,6 +256,7 @@ print("\\n".join(lines))
       try {
         const { stdout } = await execAsync('gh api user');
         userObj = JSON.parse(stdout);
+        this.currentUserObj = userObj;
       } catch {}
 
       try {
@@ -275,8 +301,8 @@ print("\\n".join(lines))
         `{bold}{yellow-fg}Location:{/yellow-fg}{/bold}  ${userObj.location || 'N/A'}`,
         `{bold}{yellow-fg}Email:{/yellow-fg}{/bold}     ${userObj.email || 'N/A'}`,
         `{bold}{yellow-fg}Website:{/yellow-fg}{/bold}   ${userObj.blog || 'N/A'}`,
-        `{bold}{yellow-fg}Twitter/X:{/yellow-fg}{/bold} @${userObj.twitter_username || 'N/A'}`,
-        `{bold}{yellow-fg}Hireable:{/yellow-fg}{/bold}  ${userObj.hireable ? '{green-fg}Yes ✓{/green-fg}' : 'No'}`,
+        `{bold}{yellow-fg}Twitter/X:{/yellow-fg} @${userObj.twitter_username || 'N/A'}`,
+        `{bold}{yellow-fg}Hireable:{/yellow-fg}  ${userObj.hireable ? '{green-fg}Yes ✓{/green-fg}' : 'No'}`,
         `{bold}{yellow-fg}GitHub:{/yellow-fg}{/bold}    {cyan-fg}${userObj.html_url}{/cyan-fg}`,
         '',
         `{bold}{yellow-fg}Bio:{/yellow-fg}{/bold}`,
@@ -290,12 +316,13 @@ print("\\n".join(lines))
         `  • {green-fg}Public Gists:{/green-fg}        ${userObj.public_gists || 0}`,
         `  • {green-fg}Followers:{/green-fg}           ${userObj.followers}`,
         `  • {green-fg}Following:{/green-fg}           ${userObj.following}`,
-        `  • {green-fg}Account Created:{/green-fg}     ${(userObj.created_at || '').slice(0, 10)}`
+        `  • {green-fg}Account Created:{/green-fg}     ${(userObj.created_at || '').slice(0, 10)}`,
+        '',
+        ' {gray-fg}(Press y or Ctrl+C to copy profile URL to clipboard){/gray-fg}'
       ].join('\n');
 
       this.profileDetailsBox.setContent(profileContent);
 
-      // Fetch personal repositories via GitHub API
       try {
         const repos = await this.app.ghService.getUserRepos();
         this.userRepos = repos;
@@ -310,7 +337,6 @@ print("\\n".join(lines))
       }
     }
 
-    // Load Code & Git Activity Stats
     const gitStats = await this.fetchGitCodeStats();
     const appStats = RepoStore.getStats();
     const netLines = gitStats.addedLines - gitStats.deletedLines;

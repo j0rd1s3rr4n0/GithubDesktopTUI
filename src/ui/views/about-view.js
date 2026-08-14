@@ -5,6 +5,7 @@ import path from 'path';
 import os from 'os';
 import fs from 'fs';
 import { I18nService } from '../../git/i18n-service.js';
+import { copyPathToClipboard } from '../../git/repo-store.js';
 
 const execAsync = util.promisify(exec);
 const AVATAR_CACHE_PATH = path.join(os.homedir(), '.gitu_avatar.jpg');
@@ -34,8 +35,11 @@ export class AboutView {
       border: { type: 'line' },
       style: {
         border: { fg: 'magenta' },
-        bg: 'black'
+        bg: 'black',
+        focus: { border: { fg: 'green' } }
       },
+      keys: true,
+      mouse: true,
       scrollable: true,
       scrollbar: { ch: '█', style: { fg: 'magenta' } }
     });
@@ -58,7 +62,9 @@ export class AboutView {
       left: 0,
       width: '100%-2',
       height: '100%-23',
-      tags: true
+      tags: true,
+      mouse: true,
+      keys: true
     });
 
     // Right Column: App Info, Features & Language Selector
@@ -73,8 +79,11 @@ export class AboutView {
       border: { type: 'line' },
       style: {
         border: { fg: 'cyan' },
-        bg: 'black'
+        bg: 'black',
+        focus: { border: { fg: 'green' } }
       },
+      keys: true,
+      mouse: true,
       scrollable: true,
       scrollbar: { ch: '█', style: { fg: 'cyan' } }
     });
@@ -133,6 +142,15 @@ export class AboutView {
 
     this.refreshBtn.on('press', refreshProfile);
     this.refreshBtn.on('click', refreshProfile);
+
+    const copyProfileUrl = () => {
+      const url = 'https://github.com/j0rd1s3rr4n0';
+      copyPathToClipboard(url);
+      this.app.notify(`✓ Copied GitHub profile URL to clipboard: ${url}`);
+    };
+
+    this.profileBox.key(['y', 'C-c'], copyProfileUrl);
+    this.infoBox.key(['y', 'C-c'], copyProfileUrl);
   }
 
   generateAnsiAvatarSync(imagePath) {
@@ -225,7 +243,9 @@ print("\\n".join(lines))
       `{bold}{yellow-fg}Real-Time GitHub Stats:{/yellow-fg}{/bold}`,
       `  • {green-fg}Public Repositories:{/green-fg} ${userObj.public_repos}`,
       `  • {green-fg}Followers:{/green-fg}           ${userObj.followers}`,
-      `  • {green-fg}Following:{/green-fg}           ${userObj.following}`
+      `  • {green-fg}Following:{/green-fg}           ${userObj.following}`,
+      '',
+      ' {gray-fg}(Press y or Ctrl+C to copy GitHub profile URL to clipboard){/gray-fg}'
     ].join('\n');
 
     this.profileDetailsBox.setContent(profileContent);
@@ -253,7 +273,7 @@ print("\\n".join(lines))
       `  • {green-fg}4: Stash{/green-fg}       - Stash drawer manager`,
       `  • {green-fg}5: GitHub{/green-fg}      - Pull Requests, Issues & Repositories`,
       `  • {green-fg}6: Repositories{/green-fg}- Unified local & cloned repo switcher`,
-      `  • {green-fg}7: About{/green-fg}       - 1.5x Wider Avatar & i18n`,
+      `  • {green-fg}7: About{/green-fg}       - Selectable Profile & Copyable Info (y/Ctrl+C)`,
       `  • {green-fg}8: My Account{/green-fg}  - User Profile & Code Statistics`,
       '',
       `{bold}{yellow-fg}Active Language:{/yellow-fg}{/bold} {green-fg}${currentLang}{/green-fg}`
