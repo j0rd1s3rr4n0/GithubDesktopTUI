@@ -20,7 +20,7 @@
     "blessed",
     "cli"
   ],
-  "author": "Antigravity AI",
+  "author": "Jordi Serrano (j0rd1s3rr4n0)",
   "license": "MIT",
   "dependencies": {
     "blessed": "^0.1.81",

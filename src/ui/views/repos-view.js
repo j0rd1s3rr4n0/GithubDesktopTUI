@@ -105,6 +105,7 @@ export class ReposView {
       width: '100%',
       height: 4,
       label: ` {bold}${I18nService.t('openPathLabel')}{/bold} `,
+      tags: true,
       border: { type: 'line' },
       style: {
         border: { fg: 'green' }

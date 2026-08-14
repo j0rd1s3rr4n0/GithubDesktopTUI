@@ -51,6 +51,30 @@ chmod +x autoinstall.sh
 | **Disk Storage** | **15 MB** free space | **50 MB** free space |
 | **Terminal Display** | 80 x 24 text grid (ANSI 16/256-color) | 120 x 35 text grid with 24-bit TrueColor support |
 
+### 🖥️ Terminal Compatibility
+
+| Terminal | Status | Notes |
+| :--- | :--- | :--- |
+| **GNOME Terminal** (Ubuntu default) | ✅ Fully supported | Tested, renders perfectly |
+| **Terminator** | ✅ Fully supported | Tested, renders perfectly |
+| **Kitty** | ✅ Fully supported | TrueColor native |
+| **Alacritty** | ✅ Fully supported | TrueColor native |
+| **Konsole** (KDE) | ✅ Fully supported | 256-color + TrueColor |
+| **xterm** | ✅ Supported | Works in 256-color mode |
+| **tmux** | ⚠️ Partial | May have issues with Unicode box-drawing characters and color rendering. `gd` auto-sets `COLORTERM=truecolor` and forces `TERM=xterm-256color` inside tmux, but some glitches may persist depending on your tmux version and config. See troubleshooting below. |
+| **GNU Screen** | ⚠️ Partial | Similar limitations to tmux |
+
+> **⚠️ tmux Troubleshooting:**
+> If you experience rendering glitches inside `tmux` (garbled borders, missing colors, tab strip artifacts), try adding these lines to your `~/.tmux.conf`:
+> ```bash
+> set -g default-terminal "xterm-256color"
+> set -ga terminal-overrides ",xterm-256color:Tc"
+> set -g mouse on
+> ```
+> Then restart tmux: `tmux kill-server && tmux`
+>
+> If the issue persists, please [open an issue](https://github.com/j0rd1s3rr4n0/git-desktop-tui/issues) with your `tmux -V`, `echo $TERM`, and a screenshot.
+
 ---
 
 ## ✨ Features & Architecture
