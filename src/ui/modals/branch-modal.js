@@ -83,6 +83,10 @@ export class BranchModal {
       this.submit();
     });
 
+    this.input.key(['escape'], () => {
+      this.hide();
+    });
+
     this.submitBtn.on('press', () => this.submit());
     this.cancelBtn.on('press', () => this.hide());
     
@@ -99,6 +103,8 @@ export class BranchModal {
   }
 
   show() {
+    this.screen.append(this.form);
+    this.form.setFront();
     this.input.setValue('');
     this.form.show();
     this.input.focus();

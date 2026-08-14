@@ -202,6 +202,33 @@ export class App {
       process.exit(0);
     });
 
+    this.screen.key(['escape'], () => {
+      if (this.helpModal && this.helpModal.modal && this.helpModal.modal.visible) {
+        this.helpModal.hide();
+        return;
+      }
+      if (this.authModal && this.authModal.box && this.authModal.box.visible) {
+        this.authModal.hide();
+        return;
+      }
+      if (this.branchModal && this.branchModal.form && this.branchModal.form.visible) {
+        this.branchModal.hide();
+        return;
+      }
+      if (this.stashModal && this.stashModal.form && this.stashModal.form.visible) {
+        this.stashModal.hide();
+        return;
+      }
+      if (this.confirmModal && this.confirmModal.box && this.confirmModal.box.visible) {
+        this.confirmModal.hide();
+        return;
+      }
+      if (this.initModal && this.initModal.repoBrowserModal && this.initModal.repoBrowserModal.box && this.initModal.repoBrowserModal.box.visible) {
+        this.initModal.repoBrowserModal.hide();
+        return;
+      }
+    });
+
     this.screen.key(['1'], () => this.switchTab(0));
     this.screen.key(['2'], () => this.switchTab(1));
     this.screen.key(['3'], () => this.switchTab(2));

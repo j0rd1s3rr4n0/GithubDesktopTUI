@@ -83,6 +83,10 @@ export class StashModal {
       this.submit();
     });
 
+    this.input.key(['escape'], () => {
+      this.hide();
+    });
+
     this.submitBtn.on('press', () => this.submit());
     this.cancelBtn.on('press', () => this.hide());
     this.form.key(['escape'], () => this.hide());
@@ -96,6 +100,8 @@ export class StashModal {
   }
 
   show() {
+    this.screen.append(this.form);
+    this.form.setFront();
     this.input.setValue('');
     this.form.show();
     this.input.focus();

@@ -72,7 +72,7 @@ export class RepoBrowserModal {
       left: 1,
       width: '100%-2',
       tags: true,
-      content: '{cyan-fg}[Tab]{/cyan-fg} Switch list  {cyan-fg}[Enter]{/cyan-fg} Select / Clone  {cyan-fg}[Esc/q]{/cyan-fg} Cancel'
+      content: '{cyan-fg}[Tab]{/cyan-fg} Switch list  {cyan-fg}[Enter]{/cyan-fg} Select / Clone  {cyan-fg}[Esc/q]{/cyan-fg} Close'
     });
 
     this.ownersData = [];
@@ -86,10 +86,6 @@ export class RepoBrowserModal {
       this.onOwnerSelected(index);
     });
 
-    this.repoList.on('select item', (item, index) => {
-      // Show description or details if needed
-    });
-
     this.repoList.key(['enter'], () => {
       const idx = this.repoList.selected;
       if (this.reposData[idx]) {
@@ -100,9 +96,13 @@ export class RepoBrowserModal {
     });
 
     this.box.key(['escape', 'q'], () => this.hide());
+    this.ownerList.key(['escape', 'q'], () => this.hide());
+    this.repoList.key(['escape', 'q'], () => this.hide());
   }
 
   async show() {
+    this.screen.append(this.box);
+    this.box.setFront();
     this.box.show();
     this.ownerList.focus();
     this.screen.render();
