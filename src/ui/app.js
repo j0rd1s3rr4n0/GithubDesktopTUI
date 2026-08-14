@@ -32,11 +32,23 @@ export class App {
     this.gitService = new GitService(targetRepoPath);
     this.ghService = new GhService(targetRepoPath);
 
+    // Normalize terminal environment for full Tmux / Screen compatibility
+    if (process.env.TMUX || (process.env.TERM && (process.env.TERM.includes('screen') || process.env.TERM.includes('tmux')))) {
+      if (!process.env.COLORTERM) process.env.COLORTERM = 'truecolor';
+      if (!process.env.TERM || process.env.TERM === 'screen' || process.env.TERM === 'tmux') {
+        process.env.TERM = 'xterm-256color';
+      }
+    }
+
     this.screen = blessed.screen({
       smartCSR: false,
       fastCSR: true,
       title: 'GitHub Desktop TUI - gitu / gd',
-      fullUnicode: true
+      fullUnicode: true,
+      forceUnicode: true,
+      terminal: process.env.TERM || 'xterm-256color',
+      warnings: false,
+      dump: false
     });
 
     this.activeTab = 0; // 0..7 (8 Tabs Total)
@@ -130,25 +142,39 @@ export class App {
   }
 
   initUI() {
-    // Top Header Component
+    // Top Header Component (3 lines: top 0 to 2)
     this.header = new Header();
     this.screen.append(this.header.box);
 
-    // Tab Navigation Bar
+    // Sleek High-Contrast Borderless Tab Strip Container (2 lines: top 3 to 4)
     this.tabBar = blessed.box({
       top: 3,
       left: 0,
       width: '100%',
-      height: 3,
+      height: 2,
       tags: true,
-      border: { type: 'line' },
       style: {
-        border: { fg: 'gray' },
-        bg: 'black'
+        bg: 'black',
+        fg: 'white'
       },
       mouse: true
     });
     this.screen.append(this.tabBar);
+
+    // Separator line below tab bar
+    this.tabBarLine = blessed.box({
+      parent: this.tabBar,
+      top: 1,
+      left: 0,
+      width: '100%',
+      height: 1,
+      style: {
+        bg: 'blue',
+        fg: 'cyan'
+      },
+      content: '{gray-fg}──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────{/gray-fg}',
+      tags: true
+    });
 
     // Clickable Interactive Tab Buttons (8 Tabs)
     this.tabButtons = [];
@@ -171,13 +197,13 @@ export class App {
         top: 0,
         left: currentLeft,
         height: 1,
-        width: label.length + 2,
-        content: ` ${label} `,
+        width: label.length + 4,
+        content: ` ${label} │`,
         tags: true,
         style: {
           bg: 'black',
           fg: 'gray',
-          focus: { bg: 'blue', fg: 'white' }
+          focus: { bg: 'blue', fg: 'white', bold: true }
         },
         mouse: true,
         keys: true
@@ -187,7 +213,7 @@ export class App {
       btn.on('press', () => this.switchTab(idx));
 
       this.tabButtons.push(btn);
-      currentLeft += label.length + 2;
+      currentLeft += label.length + 4;
     });
 
     // Notification Bar at bottom
@@ -206,8 +232,8 @@ export class App {
     });
     this.screen.append(this.notificationBar);
 
-    // Initialize 8 Views
-    const viewOptions = { top: 6 };
+    // Initialize 8 Views starting from top: 5
+    const viewOptions = { top: 5 };
     this.views = [
       new ChangesView(this.screen, this.gitService, viewOptions),
       new HistoryView(this.screen, this.gitService, viewOptions),
@@ -278,10 +304,11 @@ export class App {
     let currentLeft = 1;
     this.tabButtons.forEach((btn, idx) => {
       const label = I18nService.t(this.tabKeys[idx]);
-      btn.setContent(` ${label} `);
+      const sep = idx === this.tabButtons.length - 1 ? '' : ' │';
+      btn.setContent(` ${label}${sep}`);
       btn.position.left = currentLeft;
-      btn.position.width = label.length + 2;
-      currentLeft += label.length + 2;
+      btn.position.width = label.length + (sep ? 4 : 2);
+      currentLeft += label.length + (sep ? 4 : 2);
     });
 
     this.notificationBar.setContent(I18nService.t('bottomHint'));
@@ -303,11 +330,16 @@ export class App {
 
   updateTabBar() {
     this.tabButtons.forEach((btn, idx) => {
+      const label = I18nService.t(this.tabKeys[idx]);
+      const sep = idx === this.tabButtons.length - 1 ? '' : ' │';
+
       if (idx === this.activeTab) {
+        btn.setContent(` {bold}${label}{/bold}${sep}`);
         btn.style.bg = 'blue';
         btn.style.fg = 'white';
         btn.style.bold = true;
       } else {
+        btn.setContent(` ${label}${sep}`);
         btn.style.bg = 'black';
         btn.style.fg = 'gray';
         btn.style.bold = false;
@@ -323,7 +355,7 @@ export class App {
     // 1. Hide all view containers
     this.views.forEach((v) => v.hide());
 
-    // 2. Clear terminal buffer & reset cell allocation memory to eradicate ghost characters
+    // 2. Clear terminal buffer & reset cell allocation memory to eradicate ghost characters in tmux
     if (this.screen.program) {
       this.screen.program.clear();
     }
