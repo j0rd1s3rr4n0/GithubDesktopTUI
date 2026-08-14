@@ -12,6 +12,7 @@ import { BranchModal } from './modals/branch-modal.js';
 import { StashModal } from './modals/stash-modal.js';
 import { ConfirmModal } from './modals/confirm-modal.js';
 import { InitModal } from './modals/init-modal.js';
+import { AuthModal } from './modals/auth-modal.js';
 
 export class App {
   constructor(targetRepoPath = process.cwd()) {
@@ -81,7 +82,7 @@ export class App {
         fg: 'white',
         bold: true
       },
-      content: ' Press [?] or [F1] for keyboard shortcuts help | [5] GitHub CLI'
+      content: ' Press [?] for Help | [L] GitHub Auth | [5] GitHub CLI'
     });
     this.screen.append(this.notificationBar);
 
@@ -103,6 +104,11 @@ export class App {
     // Initialize Modals
     this.helpModal = new HelpModal(this.screen);
     this.confirmModal = new ConfirmModal(this.screen);
+
+    this.authModal = new AuthModal(this.screen, this.ghService, async () => {
+      await this.refreshGlobalHeader();
+      this.views[this.activeTab].refresh();
+    });
 
     this.branchModal = new BranchModal(this.screen, async (name, checkout) => {
       try {
@@ -185,7 +191,7 @@ export class App {
     this.screen.render();
     if (this.notifyTimeout) clearTimeout(this.notifyTimeout);
     this.notifyTimeout = setTimeout(() => {
-      this.notificationBar.setContent(' Press [?] or [F1] for keyboard shortcuts help');
+      this.notificationBar.setContent(' Press [?] for Help | [L] GitHub Auth | [5] GitHub CLI');
       this.screen.render();
     }, 4000);
   }
@@ -212,9 +218,9 @@ export class App {
       this.notify('Refreshed Git & GitHub status');
     });
 
-    this.screen.key(['L', 'l'], async () => {
+    this.screen.key(['L', 'l'], () => {
       if (this.activeTab !== 0) { // Avoid conflict when typing in commit inputs
-        await this.handleGhAuth();
+        this.authModal.show();
       }
     });
 
@@ -248,15 +254,6 @@ export class App {
     this.screen.on('resize', () => {
       this.screen.render();
     });
-  }
-
-  async handleGhAuth() {
-    const auth = await this.ghService.getAuthStatus();
-    if (auth.isLoggedIn) {
-      this.notify(`GitHub Authenticated: @${auth.user} (${auth.host})`);
-    } else {
-      this.notify('Run "gh auth login" in terminal to authenticate GitHub CLI');
-    }
   }
 
   async executePush() {

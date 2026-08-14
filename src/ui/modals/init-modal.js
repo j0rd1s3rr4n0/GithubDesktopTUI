@@ -1,4 +1,5 @@
 import blessed from 'blessed';
+import { RepoBrowserModal } from './repo-browser-modal.js';
 
 export class InitModal {
   constructor(screen, gitService, ghService, onDoneCallback) {
@@ -11,7 +12,7 @@ export class InitModal {
       parent: screen,
       top: 'center',
       left: 'center',
-      width: 64,
+      width: 68,
       height: 14,
       label: ' {bold}{yellow-fg}Not a Git Repository{/yellow-fg}{/bold} ',
       tags: true,
@@ -28,7 +29,7 @@ export class InitModal {
       parent: this.box,
       top: 1,
       left: 2,
-      width: 58,
+      width: 62,
       tags: true,
       content: `The directory {cyan-fg}${this.gitService.repoPath}{/cyan-fg} is not a Git repository.\n\nChoose an action to proceed:`
     });
@@ -36,10 +37,10 @@ export class InitModal {
     this.initBtn = blessed.button({
       parent: this.box,
       top: 5,
-      left: 4,
-      width: 24,
+      left: 3,
+      width: 19,
       height: 1,
-      content: ' [i] Initialize Git ',
+      content: ' [i] Init Git ',
       align: 'center',
       style: {
         bg: 'green',
@@ -49,13 +50,29 @@ export class InitModal {
       }
     });
 
+    this.browseBtn = blessed.button({
+      parent: this.box,
+      top: 5,
+      left: 24,
+      width: 21,
+      height: 1,
+      content: ' [b] Browse Repos ',
+      align: 'center',
+      style: {
+        bg: 'magenta',
+        fg: 'white',
+        bold: true,
+        focus: { bg: 'yellow', fg: 'black' }
+      }
+    });
+
     this.cloneBtn = blessed.button({
       parent: this.box,
       top: 5,
-      left: 32,
-      width: 24,
+      left: 47,
+      width: 18,
       height: 1,
-      content: ' [c] Clone Remote Repo ',
+      content: ' [c] Manual URL ',
       align: 'center',
       style: {
         bg: 'cyan',
@@ -68,8 +85,8 @@ export class InitModal {
     this.quitBtn = blessed.button({
       parent: this.box,
       top: 7,
-      left: 20,
-      width: 20,
+      left: 24,
+      width: 21,
       height: 1,
       content: ' [q] Quit ',
       align: 'center',
@@ -81,12 +98,12 @@ export class InitModal {
       }
     });
 
-    // Sub-form for Clone input
+    // Sub-form for Manual Clone input
     this.cloneInput = blessed.textbox({
       parent: this.box,
       top: 9,
       left: 2,
-      width: 58,
+      width: 62,
       height: 3,
       label: ' GitHub Repo (e.g. owner/repo or URL): ',
       hidden: true,
@@ -96,6 +113,11 @@ export class InitModal {
         focus: { border: { fg: 'yellow' }, bg: 'blue' }
       },
       inputOnFocus: true
+    });
+
+    // Repo Browser Modal
+    this.repoBrowserModal = new RepoBrowserModal(screen, ghService, async (repoTarget) => {
+      await this.executeClone(repoTarget);
     });
 
     this.setupEvents();
@@ -108,6 +130,10 @@ export class InitModal {
       if (this.onDone) this.onDone('initialized');
     };
 
+    const openBrowser = () => {
+      this.repoBrowserModal.show();
+    };
+
     const showCloneInput = () => {
       this.cloneInput.show();
       this.cloneInput.setValue('');
@@ -116,30 +142,35 @@ export class InitModal {
     };
 
     this.initBtn.on('press', doInit);
+    this.browseBtn.on('press', openBrowser);
     this.cloneBtn.on('press', showCloneInput);
     this.quitBtn.on('press', () => process.exit(0));
 
     this.box.key(['i'], doInit);
+    this.box.key(['b'], openBrowser);
     this.box.key(['c'], showCloneInput);
     this.box.key(['q'], () => process.exit(0));
 
     this.cloneInput.key(['enter'], async () => {
       const repoTarget = this.cloneInput.getValue().trim();
       if (!repoTarget) return;
-
-      this.text.setContent(`{cyan-fg}Cloning ${repoTarget}... Please wait.{/cyan-fg}`);
-      this.cloneInput.hide();
-      this.screen.render();
-
-      const res = await this.ghService.cloneRepo(repoTarget, this.gitService.repoPath);
-      if (res.success) {
-        this.hide();
-        if (this.onDone) this.onDone('cloned');
-      } else {
-        this.text.setContent(`{red-fg}Clone failed: ${res.error}{/red-fg}\n\nPress [c] to try again or [i] to initialize.`);
-        this.screen.render();
-      }
+      await this.executeClone(repoTarget);
     });
+  }
+
+  async executeClone(repoTarget) {
+    this.text.setContent(`{cyan-fg}Cloning ${repoTarget}... Please wait.{/cyan-fg}`);
+    this.cloneInput.hide();
+    this.screen.render();
+
+    const res = await this.ghService.cloneRepo(repoTarget, this.gitService.repoPath);
+    if (res.success) {
+      this.hide();
+      if (this.onDone) this.onDone('cloned');
+    } else {
+      this.text.setContent(`{red-fg}Clone failed: ${res.error}{/red-fg}\n\nPress [b] to browse repos, [c] for URL, or [i] to initialize.`);
+      this.screen.render();
+    }
   }
 
   show() {

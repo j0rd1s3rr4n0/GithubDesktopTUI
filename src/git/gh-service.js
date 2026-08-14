@@ -1,4 +1,4 @@
-import { execSync, exec } from 'child_process';
+import { exec } from 'child_process';
 import util from 'util';
 
 const execAsync = util.promisify(exec);
@@ -33,7 +33,6 @@ export class GhService {
         };
       }
 
-      // Check alternative JSON format
       try {
         const { stdout: userJson } = await execAsync('gh api user');
         const userObj = JSON.parse(userJson);
@@ -53,13 +52,47 @@ export class GhService {
     }
   }
 
-  async listUserRepos(limit = 30) {
+  async logout() {
     try {
-      const { stdout } = await execAsync(`gh repo list --json name,nameWithOwner,description,url,isPrivate,updatedAt --limit ${limit}`);
+      await execAsync('gh auth logout --hostname github.com -y');
+      return { success: true };
+    } catch (err) {
+      // Try generic logout fallback
+      try {
+        await execAsync('gh auth logout -y');
+        return { success: true };
+      } catch (err2) {
+        return { success: false, error: err2.message };
+      }
+    }
+  }
+
+  async getUserOrgs() {
+    try {
+      const { stdout } = await execAsync('gh api user/orgs');
+      const orgs = JSON.parse(stdout);
+      return orgs.map(o => ({
+        login: o.login,
+        description: o.description || ''
+      }));
+    } catch {
+      return [];
+    }
+  }
+
+  async listReposForOwner(owner = null, limit = 50) {
+    try {
+      const cmd = owner ? `gh repo list ${owner} --json name,nameWithOwner,description,url,isPrivate,updatedAt --limit ${limit}`
+                        : `gh repo list --json name,nameWithOwner,description,url,isPrivate,updatedAt --limit ${limit}`;
+      const { stdout } = await execAsync(cmd);
       return JSON.parse(stdout);
     } catch (err) {
       return [];
     }
+  }
+
+  async listUserRepos(limit = 50) {
+    return await this.listReposForOwner(null, limit);
   }
 
   async listPullRequests(limit = 30) {
