@@ -243,25 +243,34 @@ export class GitService {
   async getBranches() {
     try {
       const summary = await this.git.branch(['-a']);
-      const branches = [];
+      const local = [];
+      const remote = [];
 
       for (const name of summary.all) {
         const isCurrent = name === summary.current;
         const isRemote = name.startsWith('remotes/');
-        branches.push({
+        const branchObj = {
           name,
           displayName: isRemote ? name.replace('remotes/', '') : name,
-          isCurrent,
+          current: isCurrent,
           isRemote
-        });
+        };
+
+        if (isRemote) {
+          remote.push(branchObj);
+        } else {
+          local.push(branchObj);
+        }
       }
 
       return {
         current: summary.current,
-        branches
+        local,
+        remote,
+        branches: [...local, ...remote]
       };
     } catch (err) {
-      return { current: 'HEAD', branches: [] };
+      return { current: 'HEAD', local: [], remote: [], branches: [] };
     }
   }
 

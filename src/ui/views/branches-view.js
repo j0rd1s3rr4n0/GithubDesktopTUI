@@ -106,8 +106,8 @@ export class BranchesView {
     this.updateI18nLabels();
     try {
       const branchData = await this.gitService.getBranches();
-      this.localBranches = branchData.local;
-      this.remoteBranches = branchData.remote;
+      this.localBranches = Array.isArray(branchData.local) ? branchData.local : [];
+      this.remoteBranches = Array.isArray(branchData.remote) ? branchData.remote : [];
 
       const localItems = this.localBranches.map(b => {
         const star = b.current ? '{green-fg}* {/green-fg}' : '  ';
@@ -116,7 +116,7 @@ export class BranchesView {
       });
 
       const remoteItems = this.remoteBranches.map(b => {
-        return `  {cyan-fg}${b.name}{/cyan-fg}`;
+        return `  {cyan-fg}${b.displayName || b.name}{/cyan-fg}`;
       });
 
       this.localList.setItems(localItems.length ? localItems : ['{gray-fg}No local branches{/gray-fg}']);
@@ -124,6 +124,7 @@ export class BranchesView {
       this.screen.render();
     } catch (err) {
       this.localList.setItems([`{red-fg}Error: ${err.message}{/red-fg}`]);
+      this.remoteList.setItems([`{red-fg}Error: ${err.message}{/red-fg}`]);
     }
   }
 
