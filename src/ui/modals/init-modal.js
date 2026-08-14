@@ -22,7 +22,8 @@ export class InitModal {
         border: { fg: 'yellow' },
         bg: 'black'
       },
-      keys: true
+      keys: true,
+      mouse: true
     });
 
     this.text = blessed.text({
@@ -42,6 +43,8 @@ export class InitModal {
       height: 1,
       content: ' [i] Init Git ',
       align: 'center',
+      mouse: true,
+      keys: true,
       style: {
         bg: 'green',
         fg: 'black',
@@ -58,6 +61,8 @@ export class InitModal {
       height: 1,
       content: ' [b] Browse Repos ',
       align: 'center',
+      mouse: true,
+      keys: true,
       style: {
         bg: 'magenta',
         fg: 'white',
@@ -74,6 +79,8 @@ export class InitModal {
       height: 1,
       content: ' [c] Manual URL ',
       align: 'center',
+      mouse: true,
+      keys: true,
       style: {
         bg: 'cyan',
         fg: 'black',
@@ -90,6 +97,8 @@ export class InitModal {
       height: 1,
       content: ' [q] Quit ',
       align: 'center',
+      mouse: true,
+      keys: true,
       style: {
         bg: 'red',
         fg: 'white',
@@ -124,32 +133,37 @@ export class InitModal {
   }
 
   setupEvents() {
-    const doInit = async () => {
+    this.doInit = async () => {
+      if (!this.box.visible) return;
       await this.gitService.initRepo();
       this.hide();
       if (this.onDone) this.onDone('initialized');
     };
 
-    const openBrowser = () => {
+    this.openBrowser = () => {
+      if (!this.box.visible) return;
       this.repoBrowserModal.show();
     };
 
-    const showCloneInput = () => {
+    this.showCloneInput = () => {
+      if (!this.box.visible) return;
       this.cloneInput.show();
       this.cloneInput.setValue('');
       this.cloneInput.focus();
       this.screen.render();
     };
 
-    this.initBtn.on('press', doInit);
-    this.browseBtn.on('press', openBrowser);
-    this.cloneBtn.on('press', showCloneInput);
-    this.quitBtn.on('press', () => process.exit(0));
+    this.initBtn.on('press', () => this.doInit());
+    this.initBtn.on('click', () => this.doInit());
 
-    this.box.key(['i'], doInit);
-    this.box.key(['b'], openBrowser);
-    this.box.key(['c'], showCloneInput);
-    this.box.key(['q'], () => process.exit(0));
+    this.browseBtn.on('press', () => this.openBrowser());
+    this.browseBtn.on('click', () => this.openBrowser());
+
+    this.cloneBtn.on('press', () => this.showCloneInput());
+    this.cloneBtn.on('click', () => this.showCloneInput());
+
+    this.quitBtn.on('press', () => process.exit(0));
+    this.quitBtn.on('click', () => process.exit(0));
 
     this.cloneInput.key(['enter'], async () => {
       const repoTarget = this.cloneInput.getValue().trim();
@@ -173,13 +187,39 @@ export class InitModal {
     }
   }
 
+  bindScreenKeys() {
+    if (this.keysBound) return;
+    this.keysBound = true;
+
+    this.keyHandler = (ch, key) => {
+      if (!this.box.visible || (this.cloneInput && this.cloneInput.focused)) return;
+
+      const k = key.name || ch;
+      if (k === 'i') this.doInit();
+      else if (k === 'b') this.openBrowser();
+      else if (k === 'c') this.showCloneInput();
+      else if (k === 'q') process.exit(0);
+    };
+
+    this.screen.on('keypress', this.keyHandler);
+  }
+
+  unbindScreenKeys() {
+    if (this.keyHandler) {
+      this.screen.removeListener('keypress', this.keyHandler);
+      this.keysBound = false;
+    }
+  }
+
   show() {
     this.box.show();
+    this.bindScreenKeys();
     this.initBtn.focus();
     this.screen.render();
   }
 
   hide() {
+    this.unbindScreenKeys();
     this.box.hide();
     this.screen.render();
   }
