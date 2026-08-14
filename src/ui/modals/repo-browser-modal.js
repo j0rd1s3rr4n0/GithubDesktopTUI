@@ -10,7 +10,7 @@ export class RepoBrowserModal {
       parent: screen,
       top: 'center',
       left: 'center',
-      width: 76,
+      width: 78,
       height: 22,
       label: ' {bold}Clone Remote Repository - Browse Accounts & Orgs{/bold} ',
       tags: true,
@@ -72,7 +72,7 @@ export class RepoBrowserModal {
       left: 1,
       width: '100%-2',
       tags: true,
-      content: '{cyan-fg}[Tab]{/cyan-fg} Switch list  {cyan-fg}[Enter]{/cyan-fg} Select / Clone  {cyan-fg}[Esc/q]{/cyan-fg} Close'
+      content: '{cyan-fg}[Tab]{/cyan-fg} Switch list  {cyan-fg}[↑/↓]{/cyan-fg} Navigate  {cyan-fg}[Enter]{/cyan-fg} Clone Repo  {cyan-fg}[Esc/q]{/cyan-fg} Close'
     });
 
     this.ownersData = [];
@@ -84,6 +84,17 @@ export class RepoBrowserModal {
   setupEvents() {
     this.ownerList.on('select item', (item, index) => {
       this.onOwnerSelected(index);
+    });
+
+    // Tab switches focus between Owner list and Repos list
+    this.ownerList.key(['tab', 'S-tab'], () => {
+      this.repoList.focus();
+      this.screen.render();
+    });
+
+    this.repoList.key(['tab', 'S-tab'], () => {
+      this.ownerList.focus();
+      this.screen.render();
     });
 
     this.repoList.key(['enter'], () => {
