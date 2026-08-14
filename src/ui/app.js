@@ -30,7 +30,8 @@ export class App {
     this.ghService = new GhService(targetRepoPath);
 
     this.screen = blessed.screen({
-      smartCSR: true,
+      smartCSR: false,
+      fastCSR: true,
       title: 'GitHub Desktop TUI - gitu / gd',
       fullUnicode: true
     });
