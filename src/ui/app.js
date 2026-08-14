@@ -91,6 +91,7 @@ export class App {
       this.views[2].gitService = this.gitService;
       this.views[3].gitService = this.gitService;
       this.views[4].ghService = this.ghService;
+      this.views[4].gitService = this.gitService;
 
       RepoStore.addRecent(resolvedPath);
       await this.refreshGlobalHeader();
@@ -244,6 +245,9 @@ export class App {
       new AboutView(this.screen, this, viewOptions),
       new AccountView(this.screen, this, viewOptions)
     ];
+
+    // Give GithubView access to gitService for remote origin checks
+    this.views[4].gitService = this.gitService;
 
     this.views.forEach(v => {
       this.screen.append(v.container);
@@ -598,6 +602,14 @@ export class App {
       }
     });
 
+    this.screen.key(['S-g'], async () => {
+      const changesView = this.views[0];
+      const typingInInput = this.activeTab === 0 && changesView && changesView.isInputFocused();
+      if (!typingInInput && !this.hasOpenModal()) {
+        await this.openCreateRepoModal();
+      }
+    });
+
     this.screen.key(['S-p'], async () => {
       await this.executePush();
     });
@@ -621,6 +633,7 @@ export class App {
     });
     this.screen.on('execute-push', () => this.executePush());
     this.screen.on('execute-pull', () => this.executePull());
+    this.screen.on('open-create-repo-modal', () => this.openCreateRepoModal());
 
     this.screen.on('resize', () => {
       this.updateI18nLabels();
@@ -636,6 +649,25 @@ export class App {
     } else {
       this.authModal.show();
     }
+  }
+
+  async openCreateRepoModal() {
+    const hasRemote = await this.gitService.hasRemoteOrigin();
+    if (hasRemote) {
+      this.notify('✓ This repository already has a remote origin on GitHub.');
+      return;
+    }
+
+    const auth = await this.ghService.getAuthStatus();
+    if (!auth.isLoggedIn) {
+      this.errorModal.showError(
+        'GitHub Authentication Required',
+        'You must be logged in with GitHub CLI to publish a repository.\n\nPress [L] to authenticate first.'
+      );
+      return;
+    }
+
+    this.createRepoModal.prompt();
   }
 
   async executePush() {
