@@ -10,6 +10,7 @@ import { BranchesView } from './views/branches-view.js';
 import { StashView } from './views/stash-view.js';
 import { GithubView } from './views/github-view.js';
 import { ReposView } from './views/repos-view.js';
+import { AboutView } from './views/about-view.js';
 import { HelpModal } from './modals/help-modal.js';
 import { AboutModal } from './modals/about-modal.js';
 import { BranchModal } from './modals/branch-modal.js';
@@ -32,7 +33,7 @@ export class App {
       fullUnicode: true
     });
 
-    this.activeTab = 0; // 0: Changes, 1: History, 2: Branches, 3: Stash, 4: GitHub, 5: Repositories
+    this.activeTab = 0; // 0: Changes, 1: History, 2: Branches, 3: Stash, 4: GitHub, 5: Repositories, 6: About
     this.ghUser = null;
 
     this.initUI();
@@ -150,7 +151,8 @@ export class App {
       '[3] Branches',
       '[4] Stash',
       '[5] GitHub',
-      '[6] Repositories'
+      '[6] Repositories',
+      '[7] About'
     ];
 
     let currentLeft = 1;
@@ -176,7 +178,7 @@ export class App {
       btn.on('press', () => this.switchTab(idx));
 
       this.tabButtons.push(btn);
-      currentLeft += label.length + 3;
+      currentLeft += label.length + 2;
     });
 
     // Notification Bar at bottom
@@ -191,7 +193,7 @@ export class App {
         fg: 'white',
         bold: true
       },
-      content: ' Click Tabs or press 1-6 | [?] Ayuda | [F2] About | [L] Auth | [S-q] Salir'
+      content: ' Click Tabs or press 1-7 | [?] Ayuda | [7] About | [L] Auth | [S-q] Salir'
     });
     this.screen.append(this.notificationBar);
 
@@ -203,7 +205,8 @@ export class App {
       new BranchesView(this.screen, this.gitService, viewOptions),
       new StashView(this.screen, this.gitService, viewOptions),
       new GithubView(this.screen, this.ghService, viewOptions),
-      new ReposView(this.screen, this, viewOptions)
+      new ReposView(this.screen, this, viewOptions),
+      new AboutView(this.screen, this, viewOptions)
     ];
 
     this.views.forEach(v => {
@@ -298,7 +301,7 @@ export class App {
     this.screen.render();
     if (this.notifyTimeout) clearTimeout(this.notifyTimeout);
     this.notifyTimeout = setTimeout(() => {
-      this.notificationBar.setContent(' Click Tabs or press 1-6 | [?] Ayuda | [F2] About | [L] Auth | [S-q] Salir');
+      this.notificationBar.setContent(' Click Tabs or press 1-7 | [?] Ayuda | [7] About | [L] Auth | [S-q] Salir');
       this.screen.render();
     }, 4000);
   }
@@ -432,14 +435,15 @@ export class App {
     this.screen.key(['4'], () => this.switchTab(3));
     this.screen.key(['5'], () => this.switchTab(4));
     this.screen.key(['6'], () => this.switchTab(5));
+    this.screen.key(['7'], () => this.switchTab(6));
 
     // Next / Previous Tab cycle hotkeys
     this.screen.key(['C-right', '>'], () => {
-      this.switchTab((this.activeTab + 1) % 6);
+      this.switchTab((this.activeTab + 1) % 7);
     });
 
     this.screen.key(['C-left', '<'], () => {
-      this.switchTab((this.activeTab - 1 + 6) % 6);
+      this.switchTab((this.activeTab - 1 + 7) % 7);
     });
 
     this.screen.key(['f1', '?'], () => {
@@ -447,7 +451,7 @@ export class App {
     });
 
     this.screen.key(['f2'], () => {
-      this.aboutModal.toggle();
+      this.switchTab(6);
     });
 
     this.screen.key(['r'], async () => {

@@ -25,14 +25,14 @@ export class HelpModal {
 
     const helpContent = [
       '{yellow-fg}{bold}Navegación & Repositorios{/bold}{/yellow-fg}',
-      '  {cyan-fg}1 - 6{/cyan-fg}        Cambiar Pestaña (1: Changes, 2: History, 3: Branches, 4: Stash, 5: GitHub, 6: Repos)',
+      '  {cyan-fg}1 - 7{/cyan-fg}        Cambiar Pestaña (1: Changes, 2: History, 3: Branches, 4: Stash, 5: GitHub, 6: Repos, 7: About)',
       '  {cyan-fg}6{/cyan-fg}            Gestor Unificado de Repositorios (Locales + Clonados + Abrir Ruta)',
+      '  {cyan-fg}7 / F2{/cyan-fg}       Pestaña Acerca de (About j0rd1s3rr4n0)',
       '  {cyan-fg}o / Ctrl+O{/cyan-fg}   Explorar y Clonar Repositorios de GitHub (Perfil y Orgs)',
       '  {cyan-fg}i{/cyan-fg}            Diálogo de Iniciar Git o Clonar',
       '  {cyan-fg}Tab / S-Tab{/cyan-fg}  Alternar foco entre paneles',
       '  {cyan-fg}j / k / ↑ / ↓{/cyan-fg} Navegar elementos en listas y desplazamiento de diffs',
       '  {cyan-fg}r{/cyan-fg}            Refrescar estado de Git y GitHub',
-      '  {cyan-fg}a / F2{/cyan-fg}       Acerca de esta App (About j0rd1s3rr4n0)',
       '  {cyan-fg}? / F1{/cyan-fg}       Abrir / Cerrar esta ventana de Ayuda',
       '  {cyan-fg}Esc / q{/cyan-fg}      Cerrar ventana o modal activa',
       '  {cyan-fg}Shift+Q / C-c{/cyan-fg} Salir de la aplicación',
