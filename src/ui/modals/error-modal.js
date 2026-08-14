@@ -69,7 +69,9 @@ export class ErrorModal {
 
     const formattedContent = `{bold}{red-fg}${title}{/red-fg}{/bold}\n\n${this.escapeTags(fullMsg)}`;
     this.errorText.setContent(formattedContent);
-    this.errorText.scrollToTop();
+    if (typeof this.errorText.setScroll === 'function') {
+      this.errorText.setScroll(0);
+    }
     this.errorText.focus();
     this.screen.render();
   }

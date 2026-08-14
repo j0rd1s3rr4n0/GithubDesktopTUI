@@ -68,7 +68,9 @@ export class DiffViewer {
     }
 
     this.box.setContent(formattedLines.join('\n'));
-    this.box.scrollToTop();
+    if (typeof this.box.setScroll === 'function') {
+      this.box.setScroll(0);
+    }
   }
 
   escapeTags(text) {
