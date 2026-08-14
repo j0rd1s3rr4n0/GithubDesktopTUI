@@ -82,7 +82,7 @@ export class App {
         fg: 'white',
         bold: true
       },
-      content: ' Press [?] for Help | [L] GitHub Auth | [5] GitHub CLI'
+      content: ' Press [?] for Help | [L] GitHub Auth | [5] GitHub CLI | [S-q] Quit App'
     });
     this.screen.append(this.notificationBar);
 
@@ -191,42 +191,73 @@ export class App {
     this.screen.render();
     if (this.notifyTimeout) clearTimeout(this.notifyTimeout);
     this.notifyTimeout = setTimeout(() => {
-      this.notificationBar.setContent(' Press [?] for Help | [L] GitHub Auth | [5] GitHub CLI');
+      this.notificationBar.setContent(' Press [?] for Help | [L] GitHub Auth | [5] GitHub CLI | [S-q] Quit App');
       this.screen.render();
     }, 4000);
   }
 
+  hasOpenModal() {
+    return Boolean(
+      (this.helpModal && this.helpModal.modal && this.helpModal.modal.visible) ||
+      (this.authModal && this.authModal.box && this.authModal.box.visible) ||
+      (this.branchModal && this.branchModal.form && this.branchModal.form.visible) ||
+      (this.stashModal && this.stashModal.form && this.stashModal.form.visible) ||
+      (this.confirmModal && this.confirmModal.box && this.confirmModal.box.visible) ||
+      (this.initModal && this.initModal.box && this.initModal.box.visible) ||
+      (this.initModal && this.initModal.repoBrowserModal && this.initModal.repoBrowserModal.box && this.initModal.repoBrowserModal.box.visible)
+    );
+  }
+
+  closeTopModal() {
+    if (this.initModal && this.initModal.repoBrowserModal && this.initModal.repoBrowserModal.box.visible) {
+      this.initModal.repoBrowserModal.hide();
+      return true;
+    }
+    if (this.helpModal && this.helpModal.modal && this.helpModal.modal.visible) {
+      this.helpModal.hide();
+      return true;
+    }
+    if (this.authModal && this.authModal.box && this.authModal.box.visible) {
+      this.authModal.hide();
+      return true;
+    }
+    if (this.branchModal && this.branchModal.form && this.branchModal.form.visible) {
+      this.branchModal.hide();
+      return true;
+    }
+    if (this.stashModal && this.stashModal.form && this.stashModal.form.visible) {
+      this.stashModal.hide();
+      return true;
+    }
+    if (this.confirmModal && this.confirmModal.box && this.confirmModal.box.visible) {
+      this.confirmModal.hide();
+      return true;
+    }
+    if (this.initModal && this.initModal.box && this.initModal.box.visible) {
+      this.initModal.hide();
+      return true;
+    }
+    return false;
+  }
+
   initEvents() {
-    // Global Keybindings
-    this.screen.key(['q', 'C-c'], () => {
+    // Explicit Quit Application Shortcuts: Ctrl+C and Shift+Q
+    this.screen.key(['C-c', 'S-q'], () => {
       process.exit(0);
     });
 
+    // Lowercase 'q' quits app ONLY when no modal/window is open
+    this.screen.key(['q'], () => {
+      if (!this.hasOpenModal()) {
+        process.exit(0);
+      } else {
+        this.closeTopModal();
+      }
+    });
+
+    // Escape closes top active modal ONLY
     this.screen.key(['escape'], () => {
-      if (this.helpModal && this.helpModal.modal && this.helpModal.modal.visible) {
-        this.helpModal.hide();
-        return;
-      }
-      if (this.authModal && this.authModal.box && this.authModal.box.visible) {
-        this.authModal.hide();
-        return;
-      }
-      if (this.branchModal && this.branchModal.form && this.branchModal.form.visible) {
-        this.branchModal.hide();
-        return;
-      }
-      if (this.stashModal && this.stashModal.form && this.stashModal.form.visible) {
-        this.stashModal.hide();
-        return;
-      }
-      if (this.confirmModal && this.confirmModal.box && this.confirmModal.box.visible) {
-        this.confirmModal.hide();
-        return;
-      }
-      if (this.initModal && this.initModal.repoBrowserModal && this.initModal.repoBrowserModal.box && this.initModal.repoBrowserModal.box.visible) {
-        this.initModal.repoBrowserModal.hide();
-        return;
-      }
+      this.closeTopModal();
     });
 
     this.screen.key(['1'], () => this.switchTab(0));
@@ -254,11 +285,13 @@ export class App {
     });
 
     this.screen.key(['b', 'n'], () => {
-      this.branchModal.show();
+      if (!this.hasOpenModal()) {
+        this.branchModal.show();
+      }
     });
 
     this.screen.key(['s'], () => {
-      if (this.activeTab !== 0 && this.activeTab !== 3) {
+      if (!this.hasOpenModal() && this.activeTab !== 0 && this.activeTab !== 3) {
         this.stashModal.show();
       }
     });
@@ -268,7 +301,7 @@ export class App {
     });
 
     this.screen.key(['p'], async () => {
-      if (this.activeTab !== 0 && this.activeTab !== 3) {
+      if (!this.hasOpenModal() && this.activeTab !== 0 && this.activeTab !== 3) {
         this.executePull();
       }
     });
@@ -289,10 +322,8 @@ export class App {
   async handleGhAuthDirect() {
     const auth = await this.ghService.getAuthStatus();
     if (!auth.isLoggedIn) {
-      // Direct login without intermediate menu!
       this.authModal.runInteractiveLogin();
     } else {
-      // If already logged in, show status & logout modal
       this.authModal.show();
     }
   }

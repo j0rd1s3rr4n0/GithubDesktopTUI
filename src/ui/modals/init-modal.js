@@ -12,7 +12,7 @@ export class InitModal {
       parent: screen,
       top: 'center',
       left: 'center',
-      width: 68,
+      width: 70,
       height: 15,
       label: ' {bold}{yellow-fg}Not a Git Repository{/yellow-fg}{/bold} ',
       tags: true,
@@ -30,7 +30,7 @@ export class InitModal {
       parent: this.box,
       top: 1,
       left: 2,
-      width: 62,
+      width: 64,
       tags: true,
       content: `The directory {cyan-fg}${this.gitService.repoPath}{/cyan-fg} is not a Git repository.\n\nChoose an action to proceed:`
     });
@@ -75,7 +75,7 @@ export class InitModal {
       parent: this.box,
       top: 5,
       left: 47,
-      width: 18,
+      width: 19,
       height: 1,
       content: ' [c] Manual URL ',
       align: 'center',
@@ -89,13 +89,31 @@ export class InitModal {
       }
     });
 
-    this.quitBtn = blessed.button({
+    this.closeModalBtn = blessed.button({
       parent: this.box,
       top: 7,
-      left: 24,
-      width: 21,
+      left: 12,
+      width: 20,
       height: 1,
-      content: ' [q] Quit ',
+      content: ' [Esc/q] Close ',
+      align: 'center',
+      mouse: true,
+      keys: true,
+      style: {
+        bg: 'gray',
+        fg: 'white',
+        bold: true,
+        focus: { bg: 'yellow', fg: 'black' }
+      }
+    });
+
+    this.quitAppBtn = blessed.button({
+      parent: this.box,
+      top: 7,
+      left: 36,
+      width: 20,
+      height: 1,
+      content: ' [Shift+Q] Quit App ',
       align: 'center',
       mouse: true,
       keys: true,
@@ -111,7 +129,7 @@ export class InitModal {
       parent: this.box,
       top: 9,
       left: 2,
-      width: 62,
+      width: 64,
       tags: true,
       content: '{cyan-fg}[L]{/cyan-fg} GitHub Auth / Login'
     });
@@ -121,7 +139,7 @@ export class InitModal {
       parent: this.box,
       top: 10,
       left: 2,
-      width: 62,
+      width: 64,
       height: 3,
       label: ' GitHub Repo (e.g. owner/repo or URL): ',
       hidden: true,
@@ -176,13 +194,21 @@ export class InitModal {
     this.cloneBtn.on('press', () => this.showCloneInput());
     this.cloneBtn.on('click', () => this.showCloneInput());
 
-    this.quitBtn.on('press', () => process.exit(0));
-    this.quitBtn.on('click', () => process.exit(0));
+    this.closeModalBtn.on('press', () => this.hide());
+    this.closeModalBtn.on('click', () => this.hide());
+
+    this.quitAppBtn.on('press', () => process.exit(0));
+    this.quitAppBtn.on('click', () => process.exit(0));
 
     this.cloneInput.key(['enter'], async () => {
       const repoTarget = this.cloneInput.getValue().trim();
       if (!repoTarget) return;
       await this.executeClone(repoTarget);
+    });
+
+    this.cloneInput.key(['escape'], () => {
+      this.cloneInput.hide();
+      this.screen.render();
     });
   }
 
@@ -213,7 +239,8 @@ export class InitModal {
       else if (k === 'b') this.openBrowser();
       else if (k === 'c') this.showCloneInput();
       else if (k === 'l' || k === 'L') this.triggerGhAuth();
-      else if (k === 'q') process.exit(0);
+      else if (k === 'q' || k === 'escape') this.hide(); // Closes modal ONLY! Does not exit app.
+      else if (key.full === 'S-q' || key.full === 'Q') process.exit(0);
     };
 
     this.screen.on('keypress', this.keyHandler);
