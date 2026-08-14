@@ -302,11 +302,28 @@ export class App {
   switchTab(index) {
     if (index < 0 || index >= this.views.length) return;
     this.activeTab = index;
-    this.views.forEach((v, idx) => {
-      if (idx === index) v.show();
-      else v.hide();
-    });
+
+    // 1. Hide all view containers
+    this.views.forEach((v) => v.hide());
+
+    // 2. Clear terminal buffer & reset cell allocation memory to eradicate ghost characters
+    if (this.screen.program) {
+      this.screen.program.clear();
+    }
+    if (typeof this.screen.alloc === 'function') {
+      this.screen.alloc();
+    }
+
+    // 3. Show target active view
+    const activeView = this.views[index];
+    activeView.show();
+
+    // 4. Update header, tab bar styling and force clean re-render
+    this.header.box.setFront();
+    this.tabBar.setFront();
+    this.notificationBar.setFront();
     this.updateTabBar();
+    this.screen.render();
   }
 
   async refreshGlobalHeader() {
