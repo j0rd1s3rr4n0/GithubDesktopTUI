@@ -219,7 +219,9 @@ export class App {
     });
 
     this.screen.key(['L', 'l'], async () => {
-      if (this.activeTab !== 0) { // Avoid conflict when typing in commit inputs
+      const changesView = this.views[0];
+      const typingInInput = this.activeTab === 0 && changesView && changesView.isInputFocused();
+      if (!typingInInput) {
         await this.handleGhAuthDirect();
       }
     });

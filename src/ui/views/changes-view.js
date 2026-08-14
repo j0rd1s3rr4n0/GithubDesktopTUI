@@ -137,6 +137,10 @@ export class ChangesView {
     this.setupEvents();
   }
 
+  isInputFocused() {
+    return Boolean((this.summaryInput && this.summaryInput.focused) || (this.descInput && this.descInput.focused));
+  }
+
   setupEvents() {
     this.fileList.on('select item', (item, index) => {
       this.onFileSelected(index);
