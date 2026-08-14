@@ -80,8 +80,7 @@ export class ChangesView {
         border: { fg: 'gray' },
         focus: { border: { fg: 'green' }, bg: 'black' }
       },
-      inputOnFocus: true,
-      keys: false,
+      keys: true,
       mouse: true
     });
 
@@ -104,8 +103,7 @@ export class ChangesView {
         border: { fg: 'gray' },
         focus: { border: { fg: 'green' }, bg: 'black' }
       },
-      inputOnFocus: true,
-      keys: false,
+      keys: true,
       mouse: true
     });
 
@@ -147,20 +145,17 @@ export class ChangesView {
   }
 
   setupEvents() {
-    this.fileList.on('click', () => {
-      this.fileList.focus();
+    // Single-read guard on focus to prevent double keypress listeners
+    this.summaryInput.on('focus', () => {
+      if (!this.summaryInput._reading) {
+        this.summaryInput.readInput();
+      }
     });
 
-    this.summaryInput.on('click', () => {
-      this.summaryInput.focus();
-    });
-
-    this.descInput.on('click', () => {
-      this.descInput.focus();
-    });
-
-    this.diffViewer.box.on('click', () => {
-      this.diffViewer.box.focus();
+    this.descInput.on('focus', () => {
+      if (!this.descInput._reading) {
+        this.descInput.readInput();
+      }
     });
 
     this.fileList.on('select item', (item, index) => {

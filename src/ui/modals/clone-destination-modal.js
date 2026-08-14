@@ -45,8 +45,7 @@ export class CloneDestinationModal {
         border: { fg: 'gray' },
         focus: { border: { fg: 'green' }, bg: 'blue' }
       },
-      inputOnFocus: true,
-      keys: false,
+      keys: true,
       mouse: true
     });
 
@@ -102,7 +101,11 @@ export class CloneDestinationModal {
   }
 
   setupEvents() {
-    this.pathInput.on('click', () => this.pathInput.focus());
+    this.pathInput.on('focus', () => {
+      if (!this.pathInput._reading) {
+        this.pathInput.readInput();
+      }
+    });
 
     this.pathInput.on('keypress', () => {
       setTimeout(() => this.updatePreview(), 50);

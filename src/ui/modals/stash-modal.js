@@ -5,7 +5,7 @@ export class StashModal {
     this.screen = screen;
     this.onSubmit = onSubmitCallback;
 
-    this.form = blessed.form({
+    this.form = blessed.box({
       parent: screen,
       top: 'center',
       left: 'center',
@@ -40,8 +40,8 @@ export class StashModal {
         border: { fg: 'gray' },
         focus: { border: { fg: 'magenta' }, bg: 'blue' }
       },
-      inputOnFocus: true,
-      keys: false
+      keys: true,
+      mouse: true
     });
 
     this.untrackedCheckbox = blessed.checkbox({
@@ -77,6 +77,12 @@ export class StashModal {
         bg: 'gray',
         fg: 'white',
         focus: { bg: 'red', fg: 'white' }
+      }
+    });
+
+    this.input.on('focus', () => {
+      if (!this.input._reading) {
+        this.input.readInput();
       }
     });
 

@@ -80,7 +80,7 @@ export class ReposView {
     });
 
     // Bottom Path Input Form
-    this.pathForm = blessed.form({
+    this.pathForm = blessed.box({
       parent: this.container,
       bottom: 0,
       left: 0,
@@ -90,8 +90,7 @@ export class ReposView {
       border: { type: 'line' },
       style: {
         border: { fg: 'green' }
-      },
-      mouse: true
+      }
     });
 
     this.pathInput = blessed.textbox({
@@ -105,8 +104,7 @@ export class ReposView {
         fg: 'white',
         focus: { bg: 'blue', fg: 'white' }
       },
-      inputOnFocus: true,
-      keys: false,
+      keys: true,
       mouse: true
     });
 
@@ -134,12 +132,10 @@ export class ReposView {
   }
 
   setupEvents() {
-    this.repoList.on('click', () => {
-      this.repoList.focus();
-    });
-
-    this.pathInput.on('click', () => {
-      this.pathInput.focus();
+    this.pathInput.on('focus', () => {
+      if (!this.pathInput._reading) {
+        this.pathInput.readInput();
+      }
     });
 
     this.repoList.on('select item', (item, index) => {
