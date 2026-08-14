@@ -41,23 +41,23 @@ export class AccountView {
       scrollbar: { ch: '█', style: { fg: 'magenta' } }
     });
 
-    // TrueColor ANSI Avatar Box
+    // TrueColor ANSI Avatar Box (Perfect 1:1 Square Aspect Ratio: 32x32 px = 32 cols x 16 rows)
     this.avatarBox = blessed.box({
       parent: this.profileBox,
       top: 1,
       left: 'center',
-      width: 40,
-      height: 10,
+      width: 36,
+      height: 16,
       tags: false,
       align: 'center'
     });
 
     this.profileDetailsBox = blessed.box({
       parent: this.profileBox,
-      top: 11,
+      top: 17,
       left: 0,
       width: '100%-2',
-      height: '100%-13',
+      height: '100%-19',
       tags: true
     });
 
@@ -143,7 +143,7 @@ try:
 except AttributeError:
     resample = Image.LANCZOS
 
-img = Image.open(img_path).resize((36, 18), resample).convert("RGB")
+img = Image.open(img_path).resize((32, 32), resample).convert("RGB")
 w, h = img.size
 
 lines = []
@@ -172,13 +172,11 @@ print("\\n".join(lines))
     let deletedLines = 0;
 
     try {
-      // Get user commit count
       const { stdout: commitsOut } = await execAsync('git rev-list --count HEAD');
       commitCount = parseInt(commitsOut.trim(), 10) || 0;
     } catch {}
 
     try {
-      // Get shortstat for added and deleted lines
       const { stdout: statOut } = await execAsync('git log --shortstat');
       const insertionsMatches = statOut.match(/(\d+)\s+insertions?\(\+\)/g);
       const deletionsMatches = statOut.match(/(\d+)\s+deletions?\(-\)/g);
@@ -225,7 +223,6 @@ print("\\n".join(lines))
         'Once logged in, your profile, metrics, avatar, and PRs will sync automatically.'
       ].join('\n'));
     } else {
-      // Try downloading user avatar
       try {
         if (userObj.avatar_url) {
           await execAsync(`curl -s -L "${userObj.avatar_url}" -o "${USER_AVATAR_PATH}"`);
@@ -262,7 +259,6 @@ print("\\n".join(lines))
       this.profileDetailsBox.setContent(profileContent);
     }
 
-    // Load Code & Git Activity Stats
     const gitStats = await this.fetchGitCodeStats();
     const appStats = RepoStore.getStats();
     const netLines = gitStats.addedLines - gitStats.deletedLines;

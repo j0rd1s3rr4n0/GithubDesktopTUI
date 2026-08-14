@@ -40,24 +40,24 @@ export class AboutView {
       scrollbar: { ch: '█', style: { fg: 'magenta' } }
     });
 
-    // Container for High-Resolution TrueColor Avatar Image
+    // Container for Perfectly Square TrueColor Avatar Image (32x32 px = 32 cols x 16 rows)
     this.avatarBox = blessed.box({
       parent: this.profileBox,
       top: 1,
       left: 'center',
-      width: 40,
-      height: 10,
+      width: 36,
+      height: 16,
       tags: false,
       align: 'center'
     });
 
-    // Text box for text details below avatar
+    // Text box for details below avatar
     this.profileDetailsBox = blessed.box({
       parent: this.profileBox,
-      top: 11,
+      top: 17,
       left: 0,
       width: '100%-2',
-      height: '100%-13',
+      height: '100%-19',
       tags: true
     });
 
@@ -149,7 +149,7 @@ try:
 except AttributeError:
     resample = Image.LANCZOS
 
-img = Image.open(img_path).resize((36, 18), resample).convert("RGB")
+img = Image.open(img_path).resize((32, 32), resample).convert("RGB")
 w, h = img.size
 
 lines = []
@@ -197,13 +197,11 @@ print("\\n".join(lines))
       };
     }
 
-    // Try downloading avatar image
     try {
       const avatarUrl = userObj.avatar_url || 'https://avatars.githubusercontent.com/u/44474715?v=4';
       await execAsync(`curl -s -L "${avatarUrl}" -o "${AVATAR_CACHE_PATH}"`);
     } catch {}
 
-    // Render High-Resolution TrueColor ANSI Avatar using Lanczos filter
     let ansiArt = null;
     if (fs.existsSync(AVATAR_CACHE_PATH)) {
       ansiArt = await this.generateAnsiAvatar(AVATAR_CACHE_PATH);
@@ -257,6 +255,7 @@ print("\\n".join(lines))
       `  • {green-fg}5: GitHub{/green-fg}      - Pull Requests, Issues & Repositories`,
       `  • {green-fg}6: Repositories{/green-fg}- Unified local & cloned repo switcher`,
       `  • {green-fg}7: About{/green-fg}       - High-Res Profile Avatar & i18n`,
+      `  • {green-fg}8: My Account{/green-fg}  - User Profile & Code Statistics`,
       '',
       `{bold}{yellow-fg}Active Language:{/yellow-fg}{/bold} {green-fg}${currentLang}{/green-fg}`
     ].join('\n');
