@@ -9,8 +9,7 @@ import { HistoryView } from './views/history-view.js';
 import { BranchesView } from './views/branches-view.js';
 import { StashView } from './views/stash-view.js';
 import { GithubView } from './views/github-view.js';
-import { RepoChangerView } from './views/repo-changer-view.js';
-import { ClonedReposView } from './views/cloned-repos-view.js';
+import { ReposView } from './views/repos-view.js';
 import { HelpModal } from './modals/help-modal.js';
 import { BranchModal } from './modals/branch-modal.js';
 import { StashModal } from './modals/stash-modal.js';
@@ -31,7 +30,7 @@ export class App {
       fullUnicode: true
     });
 
-    this.activeTab = 0; // 0: Changes, 1: History, 2: Branches, 3: Stash, 4: GitHub, 5: Local Repos, 6: Cloned Repos
+    this.activeTab = 0; // 0: Changes, 1: History, 2: Branches, 3: Stash, 4: GitHub, 5: Repositories
     this.ghUser = null;
 
     this.initUI();
@@ -146,7 +145,7 @@ export class App {
         fg: 'white',
         bold: true
       },
-      content: ' Press [?] Help | [6] Local Repos | [7] Cloned Repos | [S-q] Quit App'
+      content: ' Press [?] Help | [6] Repositories | [L] GitHub Auth | [S-q] Quit App'
     });
     this.screen.append(this.notificationBar);
 
@@ -158,8 +157,7 @@ export class App {
       new BranchesView(this.screen, this.gitService, viewOptions),
       new StashView(this.screen, this.gitService, viewOptions),
       new GithubView(this.screen, this.ghService, viewOptions),
-      new RepoChangerView(this.screen, this, viewOptions),
-      new ClonedReposView(this.screen, this, viewOptions)
+      new ReposView(this.screen, this, viewOptions)
     ];
 
     this.views.forEach(v => {
@@ -209,8 +207,7 @@ export class App {
       '[3] Branches',
       '[4] Stash',
       '[5] GitHub',
-      '[6] Local Repos',
-      '[7] Cloned Repos'
+      '[6] Repositories'
     ];
 
     const formattedTabs = tabs.map((tab, idx) => {
@@ -260,7 +257,7 @@ export class App {
     this.screen.render();
     if (this.notifyTimeout) clearTimeout(this.notifyTimeout);
     this.notifyTimeout = setTimeout(() => {
-      this.notificationBar.setContent(' Press [?] Help | [6] Local Repos | [7] Cloned Repos | [S-q] Quit App');
+      this.notificationBar.setContent(' Press [?] Help | [6] Repositories | [L] GitHub Auth | [S-q] Quit App');
       this.screen.render();
     }, 4000);
   }
@@ -363,7 +360,6 @@ export class App {
     this.screen.key(['4'], () => this.switchTab(3));
     this.screen.key(['5'], () => this.switchTab(4));
     this.screen.key(['6'], () => this.switchTab(5));
-    this.screen.key(['7'], () => this.switchTab(6));
 
     this.screen.key(['f1', '?'], () => {
       this.helpModal.toggle();
