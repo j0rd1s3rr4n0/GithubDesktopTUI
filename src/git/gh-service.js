@@ -1,5 +1,7 @@
 import { exec } from 'child_process';
 import util from 'util';
+import path from 'path';
+import fs from 'fs';
 
 const execAsync = util.promisify(exec);
 
@@ -57,7 +59,6 @@ export class GhService {
       await execAsync('gh auth logout --hostname github.com -y');
       return { success: true };
     } catch (err) {
-      // Try generic logout fallback
       try {
         await execAsync('gh auth logout -y');
         return { success: true };
@@ -129,10 +130,26 @@ export class GhService {
     }
   }
 
-  async cloneRepo(repoNameWithOwner, targetDir) {
+  async cloneRepo(repoNameWithOwner, targetBaseDir) {
     try {
-      const { stdout } = await execAsync(`gh repo clone ${repoNameWithOwner} "${targetDir}"`);
-      return { success: true, output: stdout };
+      // Extract repo name e.g. "owner/my-app" -> "my-app"
+      const parts = repoNameWithOwner.split('/');
+      const repoName = parts[parts.length - 1].replace(/\.git$/, '');
+      const destinationDir = path.join(targetBaseDir, repoName);
+
+      // If destination directory exists and is not empty, handle error clearly
+      if (fs.existsSync(destinationDir)) {
+        const files = fs.readdirSync(destinationDir);
+        if (files.length > 0) {
+          return {
+            success: false,
+            error: `Destination path "${destinationDir}" already exists and is not an empty directory.\n\nPlease choose a different directory or delete existing files.`
+          };
+        }
+      }
+
+      const { stdout, stderr } = await execAsync(`gh repo clone ${repoNameWithOwner} "${destinationDir}"`);
+      return { success: true, clonedPath: destinationDir, output: stdout || stderr };
     } catch (err) {
       return { success: false, error: err.message };
     }

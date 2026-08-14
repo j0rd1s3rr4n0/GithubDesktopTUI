@@ -220,10 +220,9 @@ export class InitModal {
     const res = await this.ghService.cloneRepo(repoTarget, this.gitService.repoPath);
     if (res.success) {
       this.hide();
-      if (this.onDone) this.onDone('cloned');
+      if (this.onDone) this.onDone('cloned', res.clonedPath);
     } else {
-      this.text.setContent(`{red-fg}Clone failed: ${res.error}{/red-fg}\n\nPress [b] to browse repos, [c] for URL, or [i] to initialize.`);
-      this.screen.render();
+      this.screen.emit('show-error', 'Clone Repository Failed', res.error);
     }
   }
 
@@ -239,7 +238,7 @@ export class InitModal {
       else if (k === 'b') this.openBrowser();
       else if (k === 'c') this.showCloneInput();
       else if (k === 'l' || k === 'L') this.triggerGhAuth();
-      else if (k === 'q' || k === 'escape') this.hide(); // Closes modal ONLY! Does not exit app.
+      else if (k === 'q' || k === 'escape') this.hide();
       else if (key.full === 'S-q' || key.full === 'Q') process.exit(0);
     };
 

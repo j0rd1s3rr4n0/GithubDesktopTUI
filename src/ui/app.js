@@ -14,6 +14,7 @@ import { ConfirmModal } from './modals/confirm-modal.js';
 import { InitModal } from './modals/init-modal.js';
 import { AuthModal } from './modals/auth-modal.js';
 import { RepoBrowserModal } from './modals/repo-browser-modal.js';
+import { ErrorModal } from './modals/error-modal.js';
 
 export class App {
   constructor(targetRepoPath = process.cwd()) {
@@ -47,7 +48,17 @@ export class App {
 
   showInitModal() {
     if (!this.initModal) {
-      this.initModal = new InitModal(this.screen, this.gitService, this.ghService, async (action) => {
+      this.initModal = new InitModal(this.screen, this.gitService, this.ghService, async (action, clonedPath) => {
+        if (clonedPath) {
+          this.gitService = new GitService(clonedPath);
+          this.ghService = new GhService(clonedPath);
+          this.views[0].gitService = this.gitService;
+          this.views[1].gitService = this.gitService;
+          this.views[2].gitService = this.gitService;
+          this.views[3].gitService = this.gitService;
+          this.views[4].ghService = this.ghService;
+        }
+
         await this.refreshGlobalHeader();
         this.switchTab(0);
         this.notify(action === 'cloned' ? 'Repository cloned successfully!' : 'Initialized new Git repository!');
@@ -63,11 +74,20 @@ export class App {
         this.notify(`Cloning ${repoTarget}...`);
         const res = await this.ghService.cloneRepo(repoTarget, this.gitService.repoPath);
         if (res.success) {
+          if (res.clonedPath) {
+            this.gitService = new GitService(res.clonedPath);
+            this.ghService = new GhService(res.clonedPath);
+            this.views[0].gitService = this.gitService;
+            this.views[1].gitService = this.gitService;
+            this.views[2].gitService = this.gitService;
+            this.views[3].gitService = this.gitService;
+            this.views[4].ghService = this.ghService;
+          }
           await this.refreshGlobalHeader();
           this.switchTab(0);
           this.notify('Repository cloned successfully!');
         } else {
-          this.notify(`Clone failed: ${res.error}`);
+          this.errorModal.showError('Clone Repository Failed', res.error);
         }
       });
     }
@@ -128,6 +148,7 @@ export class App {
     // Initialize Modals
     this.helpModal = new HelpModal(this.screen);
     this.confirmModal = new ConfirmModal(this.screen);
+    this.errorModal = new ErrorModal(this.screen);
 
     this.authModal = new AuthModal(this.screen, this.ghService, async () => {
       await this.refreshGlobalHeader();
@@ -141,7 +162,7 @@ export class App {
         await this.refreshGlobalHeader();
         this.views[this.activeTab].refresh();
       } catch (err) {
-        this.notify(`Failed to create branch: ${err.message}`);
+        this.errorModal.showError('Create Branch Failed', err);
       }
     });
 
@@ -152,7 +173,7 @@ export class App {
         await this.refreshGlobalHeader();
         this.views[this.activeTab].refresh();
       } catch (err) {
-        this.notify(`Stash failed: ${err.message}`);
+        this.errorModal.showError('Create Stash Failed', err);
       }
     });
 
@@ -227,6 +248,7 @@ export class App {
       (this.branchModal && this.branchModal.form && this.branchModal.form.visible) ||
       (this.stashModal && this.stashModal.form && this.stashModal.form.visible) ||
       (this.confirmModal && this.confirmModal.box && this.confirmModal.box.visible) ||
+      (this.errorModal && this.errorModal.box && this.errorModal.box.visible) ||
       (this.initModal && this.initModal.box && this.initModal.box.visible) ||
       (this.initModal && this.initModal.repoBrowserModal && this.initModal.repoBrowserModal.box && this.initModal.repoBrowserModal.box.visible) ||
       (this.repoBrowserModal && this.repoBrowserModal.box && this.repoBrowserModal.box.visible)
@@ -234,11 +256,15 @@ export class App {
   }
 
   closeTopModal() {
+    if (this.errorModal && this.errorModal.box && this.errorModal.box.visible) {
+      this.errorModal.hide();
+      return true;
+    }
     if (this.repoBrowserModal && this.repoBrowserModal.box && this.repoBrowserModal.box.visible) {
       this.repoBrowserModal.hide();
       return true;
     }
-    if (this.initModal && this.initModal.repoBrowserModal && this.initModal.repoBrowserModal.box.visible) {
+    if (this.initModal && this.initModal.repoBrowserModal && this.initModal.repoBrowserModal.box && this.initModal.repoBrowserModal.box.visible) {
       this.initModal.repoBrowserModal.hide();
       return true;
     }
@@ -355,6 +381,7 @@ export class App {
 
     // Custom Screen Events
     this.screen.on('notify', msg => this.notify(msg));
+    this.screen.on('show-error', (title, err) => this.errorModal.showError(title, err));
     this.screen.on('trigger-gh-auth', () => this.handleGhAuthDirect());
     this.screen.on('open-branch-modal', () => this.branchModal.show());
     this.screen.on('open-stash-modal', () => this.stashModal.show());
@@ -382,7 +409,7 @@ export class App {
       this.refreshGlobalHeader();
       this.views[this.activeTab].refresh();
     }).catch(err => {
-      this.notify(`Push failed: ${err.message}`);
+      this.errorModal.showError('Push Failed', err);
     });
   }
 
@@ -393,7 +420,7 @@ export class App {
       this.refreshGlobalHeader();
       this.views[this.activeTab].refresh();
     }).catch(err => {
-      this.notify(`Pull failed: ${err.message}`);
+      this.errorModal.showError('Pull Failed', err);
     });
   }
 }
