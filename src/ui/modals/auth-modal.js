@@ -1,4 +1,5 @@
 import blessed from 'blessed';
+import { execSync } from 'child_process';
 
 export class AuthModal {
   constructor(screen, ghService, onAuthChangedCallback) {
@@ -10,8 +11,8 @@ export class AuthModal {
       parent: screen,
       top: 'center',
       left: 'center',
-      width: 60,
-      height: 12,
+      width: 62,
+      height: 13,
       label: ' {bold}GitHub Account Authentication (gh){/bold} ',
       tags: true,
       hidden: true,
@@ -27,14 +28,14 @@ export class AuthModal {
       parent: this.box,
       top: 1,
       left: 2,
-      width: 54,
+      width: 56,
       tags: true,
       content: 'Checking authentication status...'
     });
 
     this.loginBtn = blessed.button({
       parent: this.box,
-      top: 6,
+      top: 7,
       left: 4,
       width: 16,
       height: 1,
@@ -50,7 +51,7 @@ export class AuthModal {
 
     this.logoutBtn = blessed.button({
       parent: this.box,
-      top: 6,
+      top: 7,
       left: 22,
       width: 16,
       height: 1,
@@ -66,7 +67,7 @@ export class AuthModal {
 
     this.closeBtn = blessed.button({
       parent: this.box,
-      top: 6,
+      top: 7,
       left: 40,
       width: 16,
       height: 1,
@@ -83,26 +84,45 @@ export class AuthModal {
   }
 
   setupEvents() {
-    this.loginBtn.on('press', () => {
-      this.statusText.setContent('{yellow-fg}To login, run "gh auth login" in your terminal shell.{/yellow-fg}');
-      this.screen.render();
-    });
+    this.loginBtn.on('press', () => this.runInteractiveLogin());
+    this.box.key(['l'], () => this.runInteractiveLogin());
 
-    this.logoutBtn.on('press', async () => {
-      this.statusText.setContent('{cyan-fg}Logging out from GitHub CLI...{/cyan-fg}');
-      this.screen.render();
-      const res = await this.ghService.logout();
-      if (res.success) {
-        this.statusText.setContent('{red-fg}✓ Logged out successfully.{/red-fg}');
-        if (this.onAuthChanged) this.onAuthChanged();
-      } else {
-        this.statusText.setContent(`{red-fg}Logout failed: ${res.error}{/red-fg}`);
-      }
-      this.screen.render();
-    });
+    this.logoutBtn.on('press', () => this.runLogout());
+    this.box.key(['o'], () => this.runLogout());
 
     this.closeBtn.on('press', () => this.hide());
     this.box.key(['escape', 'q'], () => this.hide());
+  }
+
+  runInteractiveLogin() {
+    this.hide();
+    this.screen.leave(); // Temporarily suspend TUI for interactive stdin/stdout gh login
+    console.clear();
+    console.log('\n\x1b[1m\x1b[36m=== GitHub CLI Login (gh auth login) ===\x1b[0m\n');
+    
+    try {
+      execSync('gh auth login', { stdio: 'inherit' });
+    } catch (err) {
+      console.log(`\n\x1b[33mgh auth login completed or cancelled.\x1b[0m\n`);
+    }
+
+    this.screen.enter(); // Resume TUI screen
+    this.screen.render();
+    this.show();
+    if (this.onAuthChanged) this.onAuthChanged();
+  }
+
+  async runLogout() {
+    this.statusText.setContent('{cyan-fg}Logging out from GitHub CLI...{/cyan-fg}');
+    this.screen.render();
+    const res = await this.ghService.logout();
+    if (res.success) {
+      this.statusText.setContent('{red-fg}✓ Logged out successfully.{/red-fg}');
+      if (this.onAuthChanged) this.onAuthChanged();
+    } else {
+      this.statusText.setContent(`{red-fg}Logout failed: ${res.error}{/red-fg}`);
+    }
+    this.screen.render();
   }
 
   async show() {
@@ -112,10 +132,10 @@ export class AuthModal {
 
     const auth = await this.ghService.getAuthStatus();
     if (auth.isLoggedIn) {
-      this.statusText.setContent(`{green-fg}✓ Authenticated as @${auth.user}{/green-fg} on {bold}${auth.host || 'github.com'}{/bold}`);
+      this.statusText.setContent(`{green-fg}✓ Authenticated as @${auth.user}{/green-fg} on {bold}${auth.host || 'github.com'}{/bold}\n\nPress [l] to re-authenticate or [o] to logout.`);
       this.logoutBtn.focus();
     } else {
-      this.statusText.setContent('{yellow-fg}✗ Not logged in to GitHub CLI.{/yellow-fg}\nRun {bold}gh auth login{/bold} in terminal to sign in.');
+      this.statusText.setContent('{yellow-fg}✗ Not logged in to GitHub CLI.{/yellow-fg}\n\nPress {bold}[l]{/bold} or click Login to sign in interactively.');
       this.loginBtn.focus();
     }
     this.screen.render();

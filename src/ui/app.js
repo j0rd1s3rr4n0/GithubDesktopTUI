@@ -256,27 +256,25 @@ export class App {
     });
   }
 
-  async executePush() {
+  executePush() {
     this.notify('Pushing commits to remote origin...');
-    try {
-      await this.gitService.push();
+    this.gitService.push().then(() => {
       this.notify('✓ Push completed successfully');
-      await this.refreshGlobalHeader();
+      this.refreshGlobalHeader();
       this.views[this.activeTab].refresh();
-    } catch (err) {
+    }).catch(err => {
       this.notify(`Push failed: ${err.message}`);
-    }
+    });
   }
 
-  async executePull() {
+  executePull() {
     this.notify('Pulling updates from remote origin...');
-    try {
-      await this.gitService.pull();
+    this.gitService.pull().then(() => {
       this.notify('✓ Pull completed successfully');
-      await this.refreshGlobalHeader();
+      this.refreshGlobalHeader();
       this.views[this.activeTab].refresh();
-    } catch (err) {
+    }).catch(err => {
       this.notify(`Pull failed: ${err.message}`);
-    }
+    });
   }
 }
