@@ -218,9 +218,9 @@ export class App {
       this.notify('Refreshed Git & GitHub status');
     });
 
-    this.screen.key(['L', 'l'], () => {
+    this.screen.key(['L', 'l'], async () => {
       if (this.activeTab !== 0) { // Avoid conflict when typing in commit inputs
-        this.authModal.show();
+        await this.handleGhAuthDirect();
       }
     });
 
@@ -254,6 +254,17 @@ export class App {
     this.screen.on('resize', () => {
       this.screen.render();
     });
+  }
+
+  async handleGhAuthDirect() {
+    const auth = await this.ghService.getAuthStatus();
+    if (!auth.isLoggedIn) {
+      // Direct login without intermediate menu!
+      this.authModal.runInteractiveLogin();
+    } else {
+      // If already logged in, show status & logout modal
+      this.authModal.show();
+    }
   }
 
   executePush() {
