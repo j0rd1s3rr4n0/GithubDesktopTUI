@@ -15,22 +15,22 @@
 
 | Component | Requirement | Purpose |
 | :--- | :--- | :--- |
-| **Operating System** | Linux (Ubuntu, Debian, Fedora, Arch, etc.) or macOS (10.15+) | Host OS platform |
+| **Operating System** | Linux (Ubuntu, Debian, Fedora, Arch, Manjaro, etc.) or macOS (10.15+) | Host OS platform |
 | **Node.js** | v18.0.0 or higher (`node --version`) | Core JavaScript runtime |
 | **Git** | v2.20.0 or higher (`git --version`) | Local version control engine |
 | **GitHub CLI (`gh`)** | v2.0.0+ (Optional, recommended) | Remote PRs, Issues, Auth & API integration |
 | **Python 3 & Pillow** | Python 3.8+ with `Pillow`/`PIL` (`pip install pillow`) | High-Definition 24-bit TrueColor ANSI avatar rendering |
 | **Clipboard Utilities** | `xclip` or `wl-copy` (Wayland) | Universal path copying to system clipboard (`y` / `Ctrl+C`) |
 
-### ⚡ Hardware Requirements
+### ⚡ Hardware Requirements (Minimum vs Recommended)
 
-| Resource | Minimum Requirement | Recommended |
+| Hardware Resource | Minimum Requirements | Recommended Requirements |
 | :--- | :--- | :--- |
-| **Processor (CPU)** | 1.0 GHz Single-Core | Dual-Core 1.5 GHz or higher |
-| **Memory (RAM)** | 128 MB available RAM | 512 MB RAM |
-| **Disk Space** | < 15 MB | 50 MB |
-| **Terminal Resolution** | 80 columns x 24 rows | 120 columns x 35 rows or larger |
-| **Terminal Color Depth** | 256-Color ANSI terminal | 24-bit TrueColor (`xterm-256color`, Alacritty, iTerm2, Kitty, GNOME Terminal) |
+| **Processor (CPU)** | **Single-Core @ 800 MHz** (x86-64 / ARMv7 / Raspberry Pi) | Dual-Core @ 1.5 GHz or higher |
+| **System Memory (RAM)** | **64 MB** available RAM | **256 MB - 512 MB** available RAM |
+| **Graphics (GPU)** | **None Required** (Runs on Headless SSH / Serial / Framebuffer) | Integrated Intel HD / AMD / Apple Silicon GPU |
+| **Disk Storage** | **15 MB** free space | **50 MB** free space |
+| **Terminal Display** | 80 x 24 text grid (ANSI 16/256-color) | 120 x 35 text grid with 24-bit TrueColor support |
 
 ---
 
