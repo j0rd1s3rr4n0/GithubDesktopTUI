@@ -1,5 +1,5 @@
 import blessed from 'blessed';
-import { exec } from 'child_process';
+import { exec, execSync } from 'child_process';
 import util from 'util';
 import path from 'path';
 import os from 'os';
@@ -129,7 +129,7 @@ export class AccountView {
     this.refreshBtn.on('click', () => this.refresh());
   }
 
-  async generateAnsiAvatar(imagePath) {
+  generateAnsiAvatarSync(imagePath) {
     const pyScript = `
 from PIL import Image
 import os, sys
@@ -159,8 +159,7 @@ print("\\n".join(lines))
     `;
 
     try {
-      const { stdout } = await execAsync(`python3 -c '${pyScript}'`);
-      return stdout;
+      return execSync(`python3 -c '${pyScript}'`, { encoding: 'utf8' });
     } catch {
       return null;
     }
@@ -225,13 +224,13 @@ print("\\n".join(lines))
     } else {
       try {
         if (userObj.avatar_url) {
-          await execAsync(`curl -s -L "${userObj.avatar_url}" -o "${USER_AVATAR_PATH}"`);
+          execSync(`curl -s -L "${userObj.avatar_url}" -o "${USER_AVATAR_PATH}"`);
         }
       } catch {}
 
       let ansiArt = null;
       if (fs.existsSync(USER_AVATAR_PATH)) {
-        ansiArt = await this.generateAnsiAvatar(USER_AVATAR_PATH);
+        ansiArt = this.generateAnsiAvatarSync(USER_AVATAR_PATH);
       }
 
       if (ansiArt) {

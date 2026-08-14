@@ -1,5 +1,5 @@
 import blessed from 'blessed';
-import { exec } from 'child_process';
+import { exec, execSync } from 'child_process';
 import util from 'util';
 import path from 'path';
 import os from 'os';
@@ -135,7 +135,7 @@ export class AboutView {
     this.refreshBtn.on('click', refreshProfile);
   }
 
-  async generateAnsiAvatar(imagePath) {
+  generateAnsiAvatarSync(imagePath) {
     const pyScript = `
 from PIL import Image
 import os, sys
@@ -165,8 +165,7 @@ print("\\n".join(lines))
     `;
 
     try {
-      const { stdout } = await execAsync(`python3 -c '${pyScript}'`);
-      return stdout;
+      return execSync(`python3 -c '${pyScript}'`, { encoding: 'utf8' });
     } catch {
       return null;
     }
@@ -199,12 +198,12 @@ print("\\n".join(lines))
 
     try {
       const avatarUrl = userObj.avatar_url || 'https://avatars.githubusercontent.com/u/44474715?v=4';
-      await execAsync(`curl -s -L "${avatarUrl}" -o "${AVATAR_CACHE_PATH}"`);
+      execSync(`curl -s -L "${avatarUrl}" -o "${AVATAR_CACHE_PATH}"`);
     } catch {}
 
     let ansiArt = null;
     if (fs.existsSync(AVATAR_CACHE_PATH)) {
-      ansiArt = await this.generateAnsiAvatar(AVATAR_CACHE_PATH);
+      ansiArt = this.generateAnsiAvatarSync(AVATAR_CACHE_PATH);
     }
 
     if (ansiArt) {
