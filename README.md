@@ -9,6 +9,25 @@
 
 ---
 
+## ⚡ 1-Line Universal Linux Auto-Installer
+
+Run this command in your Linux terminal to automatically install all dependencies (Node.js 18+, Git, GitHub CLI, Python3 Pillow, xclip) and link global `gd` / `gitu` CLI commands:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/j0rd1s3rr4n0/git-desktop-tui/master/autoinstall.sh | bash
+```
+
+*Or execute locally after cloning:*
+
+```bash
+git clone https://github.com/j0rd1s3rr4n0/git-desktop-tui.git
+cd git-desktop-tui
+chmod +x autoinstall.sh
+./autoinstall.sh
+```
+
+---
+
 ## 💻 System Requirements
 
 ### 🛠️ Software Requirements
@@ -50,6 +69,9 @@
   7. `[7] About`: Live real-time GitHub profile auto-upgrade for developer `@j0rd1s3rr4n0`, featuring a **High-Res 24-bit TrueColor Lanczos ANSI Avatar (`32x32` / `63-column` ratio)** and real-time i18n switcher.
   8. `[8] My Account`: Authenticated user profile, live avatar, real-time commit counter, **line insertions (`+`)**, **line deletions (`-`)**, net code contributed, push/pull counters, and **1-click personal repository clone**.
 
+* **📖 Interpreted Markdown README Viewer (`m` / `Ctrl+M`)**:
+  - Automatically parses and renders `README.md` files directly in your terminal with colored headers, syntax-highlighted code blocks, bullet points, and links.
+
 * **🌐 10-Language Internationalization (`F3`)**:
   - Switch languages on-the-fly with `F3` or the language button: **English (`en`, default)**, **Spanish (`es`)**, **Catalan (`ca`)**, **French (`fr`)**, **German (`de`)**, **Czech (`cs`)**, **Russian (`ru`)**, **Chinese (`zh`)**, **Japanese (`ja`)**, and **Hindi (`hi`)**.
 
@@ -58,34 +80,6 @@
 
 * **🔍 100% Zero-Ghosting Screen Rendering (`fastCSR`)**:
   - Clean cell invalidation and terminal buffer resets prevent dead text artifacts or residual characters when scrolling or switching tabs/modals.
-
-* **📐 Fluid Terminal Resize & Zoom (`Ctrl + Scroll`)**:
-  - Handles `SIGWINCH` resize events gracefully, dynamically recalculating widget percentages, headers, and tab layouts.
-
----
-
-## 🚀 Installation & Quick Start
-
-### Global Command Setup (`gd` / `gitu`)
-
-Clone the repository and link it globally:
-
-```bash
-git clone https://github.com/j0rd1s3rr4n0/git-desktop-tui.git
-cd git-desktop-tui
-npm install
-npm link --force
-```
-
-Now you can launch the app from **any directory in your terminal**:
-
-```bash
-# Launch with alias 'gd'
-gd
-
-# Or launch with 'gitu'
-gitu
-```
 
 ---
 
@@ -98,6 +92,7 @@ gitu
 | `Tab` / `Shift + Tab` | Move focus between inputs, buttons, and lists |
 | `Esc` / `q` | Close active modal window without quitting app |
 | `Shift + Q` / `Ctrl + C` | Quit application |
+| `m` / `Ctrl + M` | Open interpreted Markdown README viewer |
 | `y` / `Ctrl + C` (on list items) | Copy selected file path, repo path, or URL to clipboard |
 | `Space` | Toggle stage/unstage file (`Changes` tab) |
 | `a` / `u` | Stage all (`a`) or Unstage all (`u`) files |
@@ -123,4 +118,5 @@ gitu
 Developed with ❤️ by **Jordi Serrano (`j0rd1s3rr4n0`)**.
 
 - **GitHub Profile**: [https://github.com/j0rd1s3rr4n0](https://github.com/j0rd1s3rr4n0)
+- **Bug Reports & Feature Requests**: [https://github.com/j0rd1s3rr4n0/git-desktop-tui/issues](https://github.com/j0rd1s3rr4n0/git-desktop-tui/issues)
 - **License**: Released under the [MIT License](LICENSE).
