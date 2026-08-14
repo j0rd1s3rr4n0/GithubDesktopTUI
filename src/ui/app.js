@@ -11,6 +11,7 @@ import { StashView } from './views/stash-view.js';
 import { GithubView } from './views/github-view.js';
 import { ReposView } from './views/repos-view.js';
 import { HelpModal } from './modals/help-modal.js';
+import { AboutModal } from './modals/about-modal.js';
 import { BranchModal } from './modals/branch-modal.js';
 import { StashModal } from './modals/stash-modal.js';
 import { ConfirmModal } from './modals/confirm-modal.js';
@@ -145,7 +146,7 @@ export class App {
         fg: 'white',
         bold: true
       },
-      content: ' Press [?] Help | [6] Repositories | [L] GitHub Auth | [S-q] Quit App'
+      content: ' Press [?] Ayuda | [F2] About | [6] Repos | [L] Auth | [S-q] Salir'
     });
     this.screen.append(this.notificationBar);
 
@@ -167,6 +168,7 @@ export class App {
 
     // Initialize Modals
     this.helpModal = new HelpModal(this.screen);
+    this.aboutModal = new AboutModal(this.screen);
     this.confirmModal = new ConfirmModal(this.screen);
     this.errorModal = new ErrorModal(this.screen);
 
@@ -257,7 +259,7 @@ export class App {
     this.screen.render();
     if (this.notifyTimeout) clearTimeout(this.notifyTimeout);
     this.notifyTimeout = setTimeout(() => {
-      this.notificationBar.setContent(' Press [?] Help | [6] Repositories | [L] GitHub Auth | [S-q] Quit App');
+      this.notificationBar.setContent(' Press [?] Ayuda | [F2] About | [6] Repos | [L] Auth | [S-q] Salir');
       this.screen.render();
     }, 4000);
   }
@@ -265,6 +267,7 @@ export class App {
   hasOpenModal() {
     return Boolean(
       (this.helpModal && this.helpModal.modal && this.helpModal.modal.visible) ||
+      (this.aboutModal && this.aboutModal.modal && this.aboutModal.modal.visible) ||
       (this.authModal && this.authModal.box && this.authModal.box.visible) ||
       (this.branchModal && this.branchModal.form && this.branchModal.form.visible) ||
       (this.stashModal && this.stashModal.form && this.stashModal.form.visible) ||
@@ -277,6 +280,10 @@ export class App {
   }
 
   closeTopModal() {
+    if (this.aboutModal && this.aboutModal.modal && this.aboutModal.modal.visible) {
+      this.aboutModal.hide();
+      return true;
+    }
     if (this.errorModal && this.errorModal.box && this.errorModal.box.visible) {
       this.errorModal.hide();
       return true;
@@ -384,6 +391,10 @@ export class App {
 
     this.screen.key(['f1', '?'], () => {
       this.helpModal.toggle();
+    });
+
+    this.screen.key(['f2'], () => {
+      this.aboutModal.toggle();
     });
 
     this.screen.key(['r'], async () => {
