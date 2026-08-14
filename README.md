@@ -9,6 +9,31 @@
 
 ---
 
+## 💻 System Requirements
+
+### 🛠️ Software Requirements
+
+| Component | Requirement | Purpose |
+| :--- | :--- | :--- |
+| **Operating System** | Linux (Ubuntu, Debian, Fedora, Arch, etc.) or macOS (10.15+) | Host OS platform |
+| **Node.js** | v18.0.0 or higher (`node --version`) | Core JavaScript runtime |
+| **Git** | v2.20.0 or higher (`git --version`) | Local version control engine |
+| **GitHub CLI (`gh`)** | v2.0.0+ (Optional, recommended) | Remote PRs, Issues, Auth & API integration |
+| **Python 3 & Pillow** | Python 3.8+ with `Pillow`/`PIL` (`pip install pillow`) | High-Definition 24-bit TrueColor ANSI avatar rendering |
+| **Clipboard Utilities** | `xclip` or `wl-copy` (Wayland) | Universal path copying to system clipboard (`y` / `Ctrl+C`) |
+
+### ⚡ Hardware Requirements
+
+| Resource | Minimum Requirement | Recommended |
+| :--- | :--- | :--- |
+| **Processor (CPU)** | 1.0 GHz Single-Core | Dual-Core 1.5 GHz or higher |
+| **Memory (RAM)** | 128 MB available RAM | 512 MB RAM |
+| **Disk Space** | < 15 MB | 50 MB |
+| **Terminal Resolution** | 80 columns x 24 rows | 120 columns x 35 rows or larger |
+| **Terminal Color Depth** | 256-Color ANSI terminal | 24-bit TrueColor (`xterm-256color`, Alacritty, iTerm2, Kitty, GNOME Terminal) |
+
+---
+
 ## ✨ Features & Architecture
 
 `GitHub Desktop TUI` brings the simplicity and productivity of GitHub Desktop directly into your Linux or macOS terminal without any heavy GUI overhead or background daemons.
@@ -39,14 +64,7 @@
 
 ---
 
-## 🚀 Installation & Usage
-
-### Prerequisites
-- **Node.js**: v18.0.0 or higher
-- **Git**: Installed and available in PATH
-- **GitHub CLI (`gh`)**: Recommended for GitHub tab, PRs, issues, and account features (`gh auth login`)
-- **Python 3 & PIL/Pillow**: Required for High-Definition TrueColor ANSI avatar rendering (`pip install pillow`)
-- **xclip / wl-copy**: Recommended for system clipboard path copying
+## 🚀 Installation & Quick Start
 
 ### Global Command Setup (`gd` / `gitu`)
 
