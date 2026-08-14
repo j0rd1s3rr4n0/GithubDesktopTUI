@@ -106,6 +106,7 @@ export class ReposView {
         focus: { bg: 'blue', fg: 'white' }
       },
       inputOnFocus: true,
+      keys: false,
       mouse: true
     });
 

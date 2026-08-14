@@ -150,6 +150,7 @@ export class InitModal {
         focus: { border: { fg: 'yellow' }, bg: 'blue' }
       },
       inputOnFocus: true,
+      keys: false,
       mouse: true
     });
 

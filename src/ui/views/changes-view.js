@@ -46,7 +46,7 @@ export class ChangesView {
     });
 
     // Commit Form Box
-    this.commitBox = blessed.form({
+    this.commitBox = blessed.box({
       parent: this.leftCol,
       top: '60%',
       left: 0,
@@ -58,9 +58,7 @@ export class ChangesView {
       style: {
         border: { fg: 'yellow' },
         focus: { border: { fg: 'yellow' } }
-      },
-      keys: true,
-      mouse: true
+      }
     });
 
     blessed.text({
@@ -83,6 +81,7 @@ export class ChangesView {
         focus: { border: { fg: 'green' }, bg: 'black' }
       },
       inputOnFocus: true,
+      keys: false,
       mouse: true
     });
 
@@ -106,6 +105,7 @@ export class ChangesView {
         focus: { border: { fg: 'green' }, bg: 'black' }
       },
       inputOnFocus: true,
+      keys: false,
       mouse: true
     });
 

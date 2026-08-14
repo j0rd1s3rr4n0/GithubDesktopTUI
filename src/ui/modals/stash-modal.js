@@ -40,7 +40,8 @@ export class StashModal {
         border: { fg: 'gray' },
         focus: { border: { fg: 'magenta' }, bg: 'blue' }
       },
-      inputOnFocus: true
+      inputOnFocus: true,
+      keys: false
     });
 
     this.untrackedCheckbox = blessed.checkbox({

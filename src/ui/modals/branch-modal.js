@@ -40,7 +40,8 @@ export class BranchModal {
         border: { fg: 'gray' },
         focus: { border: { fg: 'yellow' }, bg: 'blue' }
       },
-      inputOnFocus: true
+      inputOnFocus: true,
+      keys: false
     });
 
     this.checkoutCheckbox = blessed.checkbox({

@@ -46,6 +46,7 @@ export class CloneDestinationModal {
         focus: { border: { fg: 'green' }, bg: 'blue' }
       },
       inputOnFocus: true,
+      keys: false,
       mouse: true
     });
 
