@@ -1,4 +1,5 @@
 import blessed from 'blessed';
+import path from 'path';
 import { copyPathToClipboard } from '../../git/repo-store.js';
 
 export class MarkdownDiffModal {
@@ -224,7 +225,8 @@ export class MarkdownDiffModal {
 
   show(rawDiffText, filePath) {
     this.currentFilePath = filePath;
-    this.box.setLabel(` {bold}{magenta-fg}📝 Interpreted Markdown Diff (${path.basename(filePath)}){/magenta-fg}{/bold} `);
+    const baseName = filePath ? path.basename(filePath) : 'Markdown';
+    this.box.setLabel(` {bold}{magenta-fg}📝 Interpreted Markdown Diff (${baseName}){/magenta-fg}{/bold} `);
 
     const interpreted = this.interpretMarkdownDiff(rawDiffText, filePath);
     this.contentBox.setContent(interpreted);
