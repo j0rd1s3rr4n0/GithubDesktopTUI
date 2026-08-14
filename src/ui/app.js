@@ -13,6 +13,7 @@ import { StashModal } from './modals/stash-modal.js';
 import { ConfirmModal } from './modals/confirm-modal.js';
 import { InitModal } from './modals/init-modal.js';
 import { AuthModal } from './modals/auth-modal.js';
+import { RepoBrowserModal } from './modals/repo-browser-modal.js';
 
 export class App {
   constructor(targetRepoPath = process.cwd()) {
@@ -35,19 +36,42 @@ export class App {
   async start() {
     const isRepo = await this.gitService.isRepo();
     if (!isRepo) {
-      this.initModal = new InitModal(this.screen, this.gitService, this.ghService, async (action) => {
-        await this.refreshGlobalHeader();
-        this.switchTab(0);
-        this.notify(action === 'cloned' ? 'Repository cloned successfully!' : 'Initialized new Git repository!');
-        this.screen.render();
-      });
-      this.initModal.show();
+      this.showInitModal();
       return;
     }
 
     await this.refreshGlobalHeader();
     this.switchTab(0);
     this.screen.render();
+  }
+
+  showInitModal() {
+    if (!this.initModal) {
+      this.initModal = new InitModal(this.screen, this.gitService, this.ghService, async (action) => {
+        await this.refreshGlobalHeader();
+        this.switchTab(0);
+        this.notify(action === 'cloned' ? 'Repository cloned successfully!' : 'Initialized new Git repository!');
+        this.screen.render();
+      });
+    }
+    this.initModal.show();
+  }
+
+  showRepoBrowserModal() {
+    if (!this.repoBrowserModal) {
+      this.repoBrowserModal = new RepoBrowserModal(this.screen, this.ghService, async (repoTarget) => {
+        this.notify(`Cloning ${repoTarget}...`);
+        const res = await this.ghService.cloneRepo(repoTarget, this.gitService.repoPath);
+        if (res.success) {
+          await this.refreshGlobalHeader();
+          this.switchTab(0);
+          this.notify('Repository cloned successfully!');
+        } else {
+          this.notify(`Clone failed: ${res.error}`);
+        }
+      });
+    }
+    this.repoBrowserModal.show();
   }
 
   initUI() {
@@ -82,7 +106,7 @@ export class App {
         fg: 'white',
         bold: true
       },
-      content: ' Press [?] for Help | [L] GitHub Auth | [5] GitHub CLI | [S-q] Quit App'
+      content: ' Press [?] Help | [o] Clone/Browse | [L] GitHub Auth | [S-q] Quit App'
     });
     this.screen.append(this.notificationBar);
 
@@ -191,7 +215,7 @@ export class App {
     this.screen.render();
     if (this.notifyTimeout) clearTimeout(this.notifyTimeout);
     this.notifyTimeout = setTimeout(() => {
-      this.notificationBar.setContent(' Press [?] for Help | [L] GitHub Auth | [5] GitHub CLI | [S-q] Quit App');
+      this.notificationBar.setContent(' Press [?] Help | [o] Clone/Browse | [L] GitHub Auth | [S-q] Quit App');
       this.screen.render();
     }, 4000);
   }
@@ -204,11 +228,16 @@ export class App {
       (this.stashModal && this.stashModal.form && this.stashModal.form.visible) ||
       (this.confirmModal && this.confirmModal.box && this.confirmModal.box.visible) ||
       (this.initModal && this.initModal.box && this.initModal.box.visible) ||
-      (this.initModal && this.initModal.repoBrowserModal && this.initModal.repoBrowserModal.box && this.initModal.repoBrowserModal.box.visible)
+      (this.initModal && this.initModal.repoBrowserModal && this.initModal.repoBrowserModal.box && this.initModal.repoBrowserModal.box.visible) ||
+      (this.repoBrowserModal && this.repoBrowserModal.box && this.repoBrowserModal.box.visible)
     );
   }
 
   closeTopModal() {
+    if (this.repoBrowserModal && this.repoBrowserModal.box && this.repoBrowserModal.box.visible) {
+      this.repoBrowserModal.hide();
+      return true;
+    }
     if (this.initModal && this.initModal.repoBrowserModal && this.initModal.repoBrowserModal.box.visible) {
       this.initModal.repoBrowserModal.hide();
       return true;
@@ -258,6 +287,24 @@ export class App {
     // Escape closes top active modal ONLY
     this.screen.key(['escape'], () => {
       this.closeTopModal();
+    });
+
+    // Hotkey 'o' or 'C-o' to open Clone / Remote Repositories Browser from anywhere
+    this.screen.key(['o', 'C-o'], () => {
+      const changesView = this.views[0];
+      const typingInInput = this.activeTab === 0 && changesView && changesView.isInputFocused();
+      if (!typingInInput && !this.hasOpenModal()) {
+        this.showRepoBrowserModal();
+      }
+    });
+
+    // Hotkey 'i' when no input is focused opens Init / Clone menu
+    this.screen.key(['i'], () => {
+      const changesView = this.views[0];
+      const typingInInput = this.activeTab === 0 && changesView && changesView.isInputFocused();
+      if (!typingInInput && !this.hasOpenModal()) {
+        this.showInitModal();
+      }
     });
 
     this.screen.key(['1'], () => this.switchTab(0));
