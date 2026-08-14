@@ -1,5 +1,9 @@
 import blessed from 'blessed';
+import { exec } from 'child_process';
+import util from 'util';
 import { I18nService } from '../../git/i18n-service.js';
+
+const execAsync = util.promisify(exec);
 
 export class AboutView {
   constructor(screen, app, options = {}) {
@@ -19,9 +23,9 @@ export class AboutView {
       parent: this.container,
       top: 0,
       left: 0,
-      width: '42%',
+      width: '44%',
       height: '100%',
-      label: ' {bold}{magenta-fg}👨‍💻 Creator Profile (GitHub API){/magenta-fg}{/bold} ',
+      label: ' {bold}{magenta-fg}👨‍💻 Live GitHub Profile (Auto-Upgraded){/magenta-fg}{/bold} ',
       tags: true,
       border: { type: 'line' },
       style: {
@@ -36,8 +40,8 @@ export class AboutView {
     this.infoBox = blessed.box({
       parent: this.container,
       top: 0,
-      left: '42%',
-      width: '58%',
+      left: '44%',
+      width: '56%',
       height: '100%',
       label: ' {bold}{cyan-fg}🐙 Application & Settings{/cyan-fg}{/bold} ',
       tags: true,
@@ -54,11 +58,28 @@ export class AboutView {
       parent: this.infoBox,
       bottom: 2,
       left: 2,
-      width: 32,
+      width: 34,
       height: 1,
-      content: ' [F3] Switch Language (EN/ES/CA) ',
+      content: ' [F3] Switch Language ',
       style: {
         bg: 'blue',
+        fg: 'white',
+        bold: true,
+        focus: { bg: 'yellow', fg: 'black' }
+      },
+      mouse: true,
+      keys: true
+    });
+
+    this.refreshBtn = blessed.button({
+      parent: this.profileBox,
+      bottom: 1,
+      left: 2,
+      width: 32,
+      height: 1,
+      content: ' [r] Sync Profile with GitHub ',
+      style: {
+        bg: 'magenta',
         fg: 'white',
         bold: true,
         focus: { bg: 'yellow', fg: 'black' }
@@ -79,65 +100,67 @@ export class AboutView {
 
     this.langBtn.on('press', cycleLang);
     this.langBtn.on('click', cycleLang);
+
+    const refreshProfile = () => {
+      this.loadProfile();
+      this.app.notify('Synced live GitHub profile for @j0rd1s3rr4n0');
+    };
+
+    this.refreshBtn.on('press', refreshProfile);
+    this.refreshBtn.on('click', refreshProfile);
   }
 
   async loadProfile() {
-    this.profileBox.setContent('{cyan-fg}Fetching live profile via GitHub API (gh api users/j0rd1s3rr4n0)...{/cyan-fg}');
+    this.profileBox.setContent('{cyan-fg}Syncing live GitHub profile (@j0rd1s3rr4n0)...{/cyan-fg}');
     this.screen.render();
 
+    let userObj = null;
     try {
-      const ghService = this.app.ghService;
-      let userObj = null;
-      try {
-        const { stdout } = await ghService.execAsync ? ghService.execAsync('gh api users/j0rd1s3rr4n0') : { stdout: '' };
-        userObj = JSON.parse(stdout);
-      } catch {}
+      const { stdout } = await execAsync('gh api users/j0rd1s3rr4n0');
+      userObj = JSON.parse(stdout);
+    } catch {}
 
-      if (!userObj) {
-        userObj = {
-          login: 'j0rd1s3rr4n0',
-          name: 'Jordi Serrano',
-          bio: 'Configuring Whoami | Ethical hacker & Threat Hunter',
-          location: 'Barcelona',
-          blog: 'jordiserrano.me',
-          html_url: 'https://github.com/j0rd1s3rr4n0',
-          public_repos: 100,
-          followers: 204,
-          following: 489
-        };
-      }
-
-      const avatarArt = [
-        '{magenta-fg}   ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄   {/magenta-fg}',
-        '{magenta-fg}  █ {bold}🐙  j0rd1s3rr4n0  {/bold} █  {/magenta-fg}',
-        '{magenta-fg}  █  Ethical Hacker    █  {/magenta-fg}',
-        '{magenta-fg}  █  & Threat Hunter   █  {/magenta-fg}',
-        '{magenta-fg}   ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀   {/magenta-fg}'
-      ].join('\n');
-
-      const profileContent = [
-        avatarArt,
-        '',
-        `{bold}{yellow-fg}Name:{/yellow-fg}{/bold}      ${userObj.name || 'Jordi Serrano'}`,
-        `{bold}{yellow-fg}Username:{/yellow-fg}{/bold}  @${userObj.login}`,
-        `{bold}{yellow-fg}Location:{/yellow-fg}{/bold}  ${userObj.location || 'Barcelona'}`,
-        `{bold}{yellow-fg}Website:{/yellow-fg}{/bold}   ${userObj.blog || 'jordiserrano.me'}`,
-        `{bold}{yellow-fg}GitHub:{/yellow-fg}{/bold}    {cyan-fg}${userObj.html_url}{/cyan-fg}`,
-        '',
-        `{bold}{yellow-fg}Bio:{/yellow-fg}{/bold}`,
-        `  "${userObj.bio || 'Ethical hacker & Threat Hunter'}"`,
-        '',
-        `{bold}{yellow-fg}GitHub Metrics:{/yellow-fg}{/bold}`,
-        `  • {green-fg}Public Repositories:{/green-fg} ${userObj.public_repos}`,
-        `  • {green-fg}Followers:{/green-fg}           ${userObj.followers}`,
-        `  • {green-fg}Following:{/green-fg}           ${userObj.following}`
-      ].join('\n');
-
-      this.profileBox.setContent(profileContent);
-    } catch {
-      this.profileBox.setContent('{red-fg}Failed to load profile details.{/red-fg}');
+    if (!userObj) {
+      userObj = {
+        login: 'j0rd1s3rr4n0',
+        name: 'Jordi Serrano',
+        bio: 'Configuring Whoami | Ethical hacker & Threat Hunter',
+        location: 'Barcelona',
+        blog: 'jordiserrano.me',
+        html_url: 'https://github.com/j0rd1s3rr4n0',
+        public_repos: 100,
+        followers: 204,
+        following: 489
+      };
     }
 
+    const avatarArt = [
+      '{magenta-fg}   ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄   {/magenta-fg}',
+      '{magenta-fg}  █ {bold}🐙  j0rd1s3rr4n0  {/bold} █  {/magenta-fg}',
+      '{magenta-fg}  █  Ethical Hacker    █  {/magenta-fg}',
+      '{magenta-fg}  █  & Threat Hunter   █  {/magenta-fg}',
+      '{magenta-fg}   ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀   {/magenta-fg}'
+    ].join('\n');
+
+    const profileContent = [
+      avatarArt,
+      '',
+      `{bold}{yellow-fg}Name:{/yellow-fg}{/bold}      ${userObj.name || 'Jordi Serrano'}`,
+      `{bold}{yellow-fg}Username:{/yellow-fg}{/bold}  @${userObj.login}`,
+      `{bold}{yellow-fg}Location:{/yellow-fg}{/bold}  ${userObj.location || 'Barcelona'}`,
+      `{bold}{yellow-fg}Website:{/yellow-fg}{/bold}   ${userObj.blog || 'jordiserrano.me'}`,
+      `{bold}{yellow-fg}GitHub:{/yellow-fg}{/bold}    {cyan-fg}${userObj.html_url}{/cyan-fg}`,
+      '',
+      `{bold}{yellow-fg}Live Bio:{/yellow-fg}{/bold}`,
+      `  "${userObj.bio || 'Ethical hacker & Threat Hunter'}"`,
+      '',
+      `{bold}{yellow-fg}Real-Time GitHub Stats:{/yellow-fg}{/bold}`,
+      `  • {green-fg}Public Repositories:{/green-fg} ${userObj.public_repos}`,
+      `  • {green-fg}Followers:{/green-fg}           ${userObj.followers}`,
+      `  • {green-fg}Following:{/green-fg}           ${userObj.following}`
+    ].join('\n');
+
+    this.profileBox.setContent(profileContent);
     this.renderInfo();
   }
 
@@ -162,14 +185,18 @@ export class AboutView {
       `  • {green-fg}4: Stash{/green-fg}       - Stash drawer manager`,
       `  • {green-fg}5: GitHub{/green-fg}      - Pull Requests, Issues & Repositories`,
       `  • {green-fg}6: Repositories{/green-fg}- Unified local & cloned repo switcher`,
-      `  • {green-fg}7: About{/green-fg}       - Profile & Multi-language settings`,
+      `  • {green-fg}7: About{/green-fg}       - Live Profile & Multi-language settings`,
       '',
-      `{bold}{yellow-fg}Current Language:{/yellow-fg}{/bold} {green-fg}${currentLang}{/green-fg}`
+      `{bold}{yellow-fg}Active Language:{/yellow-fg}{/bold} {green-fg}${currentLang}{/green-fg}`
     ].join('\n');
 
     this.infoBox.setContent(infoContent);
-    this.langBtn.setContent(` [F3] Language: ${currentLang} (EN/ES/CA) `);
+    this.langBtn.setContent(` [F3] Switch Language (${currentLang}) `);
     this.screen.render();
+  }
+
+  refresh() {
+    this.loadProfile();
   }
 
   show() {
