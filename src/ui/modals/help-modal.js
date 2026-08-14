@@ -62,6 +62,8 @@ export class HelpModal {
   }
 
   show() {
+    this.screen.append(this.modal);
+    this.modal.setFront();
     this.modal.show();
     this.modal.focus();
     this.screen.render();

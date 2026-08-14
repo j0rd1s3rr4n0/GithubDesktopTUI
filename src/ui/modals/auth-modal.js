@@ -1,6 +1,5 @@
 import blessed from 'blessed';
 import { spawnSync } from 'child_process';
-import util from 'util';
 
 export class AuthModal {
   constructor(screen, ghService, onAuthChangedCallback) {
@@ -101,7 +100,7 @@ export class AuthModal {
     // 1. Leave blessed screen
     this.screen.leave();
 
-    // 2. Restore standard canonical terminal input mode for full stdin support (Enter, keys)
+    // 2. Restore standard canonical terminal input mode
     if (process.stdin.isTTY && process.stdin.setRawMode) {
       process.stdin.setRawMode(false);
       process.stdin.resume();
@@ -141,6 +140,8 @@ export class AuthModal {
   }
 
   async show() {
+    this.screen.append(this.box);
+    this.box.setFront();
     this.box.show();
     this.statusText.setContent('Checking authentication status...');
     this.screen.render();

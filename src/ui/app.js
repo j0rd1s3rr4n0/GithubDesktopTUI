@@ -248,6 +248,7 @@ export class App {
 
     // Custom Screen Events
     this.screen.on('notify', msg => this.notify(msg));
+    this.screen.on('trigger-gh-auth', () => this.handleGhAuthDirect());
     this.screen.on('open-branch-modal', () => this.branchModal.show());
     this.screen.on('open-stash-modal', () => this.stashModal.show());
     this.screen.on('execute-push', () => this.executePush());

@@ -13,7 +13,7 @@ export class InitModal {
       top: 'center',
       left: 'center',
       width: 68,
-      height: 14,
+      height: 15,
       label: ' {bold}{yellow-fg}Not a Git Repository{/yellow-fg}{/bold} ',
       tags: true,
       hidden: true,
@@ -107,10 +107,19 @@ export class InitModal {
       }
     });
 
+    blessed.text({
+      parent: this.box,
+      top: 9,
+      left: 2,
+      width: 62,
+      tags: true,
+      content: '{cyan-fg}[L]{/cyan-fg} GitHub Auth / Login'
+    });
+
     // Sub-form for Manual Clone input
     this.cloneInput = blessed.textbox({
       parent: this.box,
-      top: 9,
+      top: 10,
       left: 2,
       width: 62,
       height: 3,
@@ -151,6 +160,11 @@ export class InitModal {
       this.cloneInput.setValue('');
       this.cloneInput.focus();
       this.screen.render();
+    };
+
+    this.triggerGhAuth = () => {
+      if (!this.box.visible) return;
+      this.screen.emit('trigger-gh-auth');
     };
 
     this.initBtn.on('press', () => this.doInit());
@@ -198,6 +212,7 @@ export class InitModal {
       if (k === 'i') this.doInit();
       else if (k === 'b') this.openBrowser();
       else if (k === 'c') this.showCloneInput();
+      else if (k === 'l' || k === 'L') this.triggerGhAuth();
       else if (k === 'q') process.exit(0);
     };
 
@@ -212,6 +227,8 @@ export class InitModal {
   }
 
   show() {
+    this.screen.append(this.box);
+    this.box.setFront();
     this.box.show();
     this.bindScreenKeys();
     this.initBtn.focus();
