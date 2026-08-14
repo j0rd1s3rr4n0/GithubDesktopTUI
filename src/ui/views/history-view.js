@@ -1,6 +1,7 @@
 import blessed from 'blessed';
 import { DiffViewer } from '../components/diff-viewer.js';
 import { I18nService } from '../../git/i18n-service.js';
+import { copyPathToClipboard } from '../../git/repo-store.js';
 
 export class HistoryView {
   constructor(screen, gitService, options = {}) {
@@ -70,18 +71,63 @@ export class HistoryView {
     this.rightCol.append(this.patchViewer.box);
 
     this.commitsData = [];
+    this.currentPatch = '';
+    this.currentMdFile = null;
+
     this.setupEvents();
   }
 
   updateI18nLabels() {
     this.commitList.setLabel(` {bold}${I18nService.t('commitLogLabel')}{/bold} `);
-    this.patchViewer.box.setLabel(` {bold}${I18nService.t('commitPatchLabel')}{/bold} `);
+    if (this.currentMdFile) {
+      this.patchViewer.box.setLabel(` {bold}${I18nService.t('commitPatchLabel')} {magenta-fg}[R] Read Interpreted MD (${this.currentMdFile}){/magenta-fg}{/bold} `);
+    } else {
+      this.patchViewer.box.setLabel(` {bold}${I18nService.t('commitPatchLabel')}{/bold} `);
+    }
     this.screen.render();
+  }
+
+  detectMarkdownFileInPatch(patchText) {
+    if (!patchText) return null;
+    const matches = patchText.match(/(?:diff --git a\/[^\s]*?([^\s\/]+\.(?:md|MD|markdown)|README[^\s]*))/i);
+    if (matches && matches[1]) {
+      return matches[1];
+    }
+    const lines = patchText.split('\n');
+    for (const line of lines) {
+      if (line.includes('.md') || line.includes('.MD') || line.toLowerCase().includes('readme')) {
+        const parts = line.split(/[\s\/]/);
+        for (const p of parts) {
+          const lower = p.toLowerCase();
+          if (lower.endsWith('.md') || lower.endsWith('.markdown') || lower.includes('readme')) {
+            return p;
+          }
+        }
+      }
+    }
+    return null;
   }
 
   setupEvents() {
     this.commitList.on('select item', (item, index) => {
       this.onCommitSelected(index);
+    });
+
+    this.commitList.key(['y', 'C-c'], () => {
+      const idx = this.commitList.selected;
+      if (this.commitsData && this.commitsData[idx]) {
+        const commit = this.commitsData[idx];
+        copyPathToClipboard(commit.hash);
+        this.screen.emit('notify', `✓ Copied commit hash to clipboard: ${commit.hash}`);
+      }
+    });
+
+    this.commitList.key(['S-r', 'r'], () => {
+      if (this.currentMdFile && this.currentPatch) {
+        this.screen.emit('open-markdown-diff', this.currentPatch, this.currentMdFile);
+      } else {
+        this.screen.emit('notify', 'No Markdown file (.md / .MD / README) modified in this commit diff.');
+      }
     });
   }
 
@@ -123,7 +169,17 @@ export class HistoryView {
     this.metaBox.setContent(metaContent);
 
     const details = await this.gitService.getCommitDetails(commit.hash);
+    this.currentPatch = details.patch;
+    this.currentMdFile = this.detectMarkdownFileInPatch(details.patch);
+
     this.patchViewer.setContent(details.patch);
+
+    if (this.currentMdFile) {
+      this.patchViewer.box.setLabel(` {bold}${I18nService.t('commitPatchLabel')} {magenta-fg}[R] Read Interpreted MD (${this.currentMdFile}){/magenta-fg}{/bold} `);
+    } else {
+      this.patchViewer.box.setLabel(` {bold}${I18nService.t('commitPatchLabel')}{/bold} `);
+    }
+
     this.screen.render();
   }
 
