@@ -22,7 +22,7 @@ export class AboutView {
       hidden: true
     });
 
-    // Left Column: Developer Profile Box with Avatar & GitHub Stats
+    // Left Column: Developer Profile Box with Edge-to-Edge Avatar & GitHub Stats
     this.profileBox = blessed.box({
       parent: this.container,
       top: 0,
@@ -40,13 +40,13 @@ export class AboutView {
       scrollbar: { ch: '█', style: { fg: 'magenta' } }
     });
 
-    // Container for Perfectly Square TrueColor Avatar Image (32x32 px = 32 cols x 16 rows)
+    // Container for Full Edge-to-Edge TrueColor Avatar Image (42x42 px = 42 cols x 21 rows)
     this.avatarBox = blessed.box({
       parent: this.profileBox,
-      top: 1,
-      left: 'center',
-      width: 36,
-      height: 16,
+      top: 0,
+      left: 0,
+      width: '100%-2',
+      height: 21,
       tags: false,
       align: 'center'
     });
@@ -54,10 +54,10 @@ export class AboutView {
     // Text box for details below avatar
     this.profileDetailsBox = blessed.box({
       parent: this.profileBox,
-      top: 17,
+      top: 21,
       left: 0,
       width: '100%-2',
-      height: '100%-19',
+      height: '100%-23',
       tags: true
     });
 
@@ -149,12 +149,12 @@ try:
 except AttributeError:
     resample = Image.LANCZOS
 
-img = Image.open(img_path).resize((32, 32), resample).convert("RGB")
+img = Image.open(img_path).resize((42, 42), resample).convert("RGB")
 w, h = img.size
 
 lines = []
 for y in range(0, h, 2):
-    line = " "
+    line = ""
     for x in range(w):
         r1, g1, b1 = img.getpixel((x, y))
         r2, g2, b2 = img.getpixel((x, min(y + 1, h - 1)))
@@ -253,7 +253,7 @@ print("\\n".join(lines))
       `  • {green-fg}4: Stash{/green-fg}       - Stash drawer manager`,
       `  • {green-fg}5: GitHub{/green-fg}      - Pull Requests, Issues & Repositories`,
       `  • {green-fg}6: Repositories{/green-fg}- Unified local & cloned repo switcher`,
-      `  • {green-fg}7: About{/green-fg}       - High-Res Profile Avatar & i18n`,
+      `  • {green-fg}7: About{/green-fg}       - Full Edge-to-Edge Avatar & i18n`,
       `  • {green-fg}8: My Account{/green-fg}  - User Profile & Code Statistics`,
       '',
       `{bold}{yellow-fg}Active Language:{/yellow-fg}{/bold} {green-fg}${currentLang}{/green-fg}`
