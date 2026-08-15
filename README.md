@@ -1,4 +1,10 @@
+
+<img src="images/screenshot-2.png" alt="GitHub Desktop TUI Screenshot 2" width="500" height="500">
+
 # 🐙 GitHub Desktop TUI (`gd` / `gitu`)
+
+****
+
 
 > **A modern, feature-packed, ultra-fast 9-Tab Terminal User Interface for Git & GitHub CLI.** Inspired by GitHub Desktop, crafted with Node.js, Blessed, and 24-bit TrueColor ANSI rendering.
 
@@ -9,11 +15,11 @@
 
 ---
 
+<!-- 
 ## 🖼️ Screenshots
 
-<!--- ![GitHub Desktop TUI Screenshot 1](images/screenshot-1.png) --->
+ [!GitHub Desktop TUI Screenshot 1](images/screenshot-1.png) --->
 
-![GitHub Desktop TUI Screenshot 2](images/screenshot-2.png)
 
 > The installer also registers **GitHub Desktop TUI** in your application menu (with the app icon in `images/icon.png`) so you can launch it from your desktop environment or from `/opt`/`~/.local/bin`.
 
