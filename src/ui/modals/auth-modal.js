@@ -13,7 +13,7 @@ export class AuthModal {
       left: 'center',
       width: 62,
       height: 13,
-      label: ' {bold}GitHub Account Authentication (gh){/bold} ',
+      label: ' {bold}Git Account Authentication (gh / glab){/bold} ',
       tags: true,
       hidden: true,
       border: { type: 'line' },
@@ -108,12 +108,14 @@ export class AuthModal {
     process.stdout.write('\x1b[?25h'); // Ensure cursor is visible
 
     console.clear();
-    console.log('\n\x1b[1m\x1b[36m=== GitHub CLI Login (gh auth login) ===\x1b[0m\n');
+    const tool = this.ghService.getTool() || 'gh';
+    const label = tool === 'glab' ? 'GitLab CLI (glab)' : 'GitHub CLI (gh)';
+    console.log(`\n\x1b[1m\x1b[36m=== ${label} Login (${tool} auth login) ===\x1b[0m\n`);
 
     try {
-      spawnSync('gh', ['auth', 'login'], { stdio: 'inherit' });
+      spawnSync(tool, ['auth', 'login'], { stdio: 'inherit' });
     } catch (err) {
-      console.log(`\n\x1b[33mgh auth login completed or cancelled.\x1b[0m\n`);
+      console.log(`\n\x1b[33m${tool} auth login completed or cancelled.\x1b[0m\n`);
     }
 
     // 3. Restore Blessed TUI mode
@@ -146,12 +148,20 @@ export class AuthModal {
     this.statusText.setContent('Checking authentication status...');
     this.screen.render();
 
+    const tool = this.ghService.getTool();
+    if (!tool) {
+      this.statusText.setContent('{yellow-fg}Custom Remote mode — GitHub/GitLab CLI integration is disabled.{/yellow-fg}\n\nUse Settings (,) to switch or set a custom remote URL.');
+      this.closeBtn.focus();
+      this.screen.render();
+      return;
+    }
+
     const auth = await this.ghService.getAuthStatus();
     if (auth.isLoggedIn) {
-      this.statusText.setContent(`{green-fg}✓ Authenticated as @${auth.user}{/green-fg} on {bold}${auth.host || 'github.com'}{/bold}\n\nPress [l] to re-authenticate or [o] to logout.`);
+      this.statusText.setContent(`{green-fg}✓ Authenticated as @${auth.user}{/green-fg} on {bold}${auth.host || (tool === 'glab' ? this.ghService.getGitlabHost() : 'github.com')}{/bold}\n\nPress [l] to re-authenticate or [o] to logout.`);
       this.logoutBtn.focus();
     } else {
-      this.statusText.setContent('{yellow-fg}✗ Not logged in to GitHub CLI.{/yellow-fg}\n\nPress {bold}[l]{/bold} or click Login to sign in interactively.');
+      this.statusText.setContent(`{yellow-fg}✗ Not logged in to ${tool === 'glab' ? 'GitLab' : 'GitHub'} CLI.{/yellow-fg}\n\nPress {bold}[l]{/bold} or click Login to sign in interactively.`);
       this.loginBtn.focus();
     }
     this.screen.render();
