@@ -114,7 +114,7 @@ export class HistoryView {
       this.onCommitSelected(index);
     });
 
-    this.commitList.key(['y', 'C-c'], () => {
+    this.commitList.key(['y'], () => {
       const idx = this.commitList.selected;
       if (this.commitsData && this.commitsData[idx]) {
         const commit = this.commitsData[idx];
@@ -145,6 +145,17 @@ export class HistoryView {
         this.screen.emit('notify', 'No Markdown file diff available for this commit.');
       }
     });
+  }
+
+  handleCtrlC() {
+    const idx = this.commitList.selected;
+    if (this.commitsData && this.commitsData[idx]) {
+      const commit = this.commitsData[idx];
+      copyPathToClipboard(commit.hash);
+      this.screen.emit('notify', `✓ Copied commit hash to clipboard: ${commit.hash}`);
+      return true;
+    }
+    return false;
   }
 
   async refresh() {

@@ -177,6 +177,41 @@ export class GitService {
     }
   }
 
+  async undoChanges(filepath, isUntracked = false) {
+    const fullPath = path.join(this.repoPath, filepath);
+
+    if (isUntracked) {
+      if (fs.existsSync(fullPath)) {
+        if (fs.statSync(fullPath).isDirectory()) {
+          fs.rmSync(fullPath, { recursive: true, force: true });
+        } else {
+          fs.unlinkSync(fullPath);
+        }
+      }
+      return;
+    }
+
+    // If staged, unstage first so the working tree can be restored from HEAD.
+    try {
+      await this.git.reset(['HEAD', '--', filepath]);
+    } catch {}
+
+    // File tracked in HEAD: restore it from HEAD (discards staged + unstaged edits).
+    try {
+      await this.git.checkout(['HEAD', '--', filepath]);
+      return;
+    } catch {}
+
+    // File not present in HEAD (e.g. newly added): remove it from the working tree.
+    if (fs.existsSync(fullPath)) {
+      if (fs.statSync(fullPath).isDirectory()) {
+        fs.rmSync(fullPath, { recursive: true, force: true });
+      } else {
+        fs.unlinkSync(fullPath);
+      }
+    }
+  }
+
   async commit(summary, description = '') {
     if (!summary || !summary.trim()) {
       throw new Error('Commit summary is required');

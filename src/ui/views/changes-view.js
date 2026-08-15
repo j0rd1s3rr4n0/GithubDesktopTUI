@@ -140,6 +140,7 @@ export class ChangesView {
     this.summaryDraft = '';
     this.descDraft = '';
     this.currentRawDiff = '';
+    this.markedPaths = new Set();
 
     this.setupEvents();
   }
@@ -229,7 +230,7 @@ export class ChangesView {
       this.onFileSelected(index);
     });
 
-    this.fileList.key(['y', 'C-c'], () => {
+    this.fileList.key(['y'], () => {
       const idx = this.fileList.selected;
       if (this.filesData && this.filesData[idx]) {
         const filePath = this.filesData[idx].path;
@@ -267,12 +268,33 @@ export class ChangesView {
       this.summaryInput.focus();
     });
 
-    this.summaryInput.key(['C-e', 'C-enter'], () => {
+    let lastCommitRun = 0;
+    const commitShortcut = () => {
+      const now = Date.now();
+      if (now - lastCommitRun < 400) return;
+      lastCommitRun = now;
       this.executeCommit();
+    };
+
+    this.summaryInput.key(['C-e', 'C-enter'], commitShortcut);
+    this.descInput.key(['C-e', 'C-enter'], commitShortcut);
+
+    // Ctrl+Enter arrives in the terminal as plain Enter (indistinguishable byte \r).
+    // Bind Enter globally but only commit when an input field actually has focus.
+    const commitOnEnter = () => {
+      if (this.summaryInput.focused || this.descInput.focused) {
+        commitShortcut();
+      }
+    };
+    this.summaryInput.key(['enter'], commitOnEnter);
+    this.descInput.key(['enter'], commitOnEnter);
+
+    this.fileList.key(['x'], () => {
+      this.toggleMarkSelected();
     });
 
-    this.descInput.key(['C-e', 'C-enter'], () => {
-      this.executeCommit();
+    this.fileList.key(['S-u'], () => {
+      this.requestUndoMarked();
     });
 
     this.commitBtn.on('press', () => {
@@ -282,6 +304,17 @@ export class ChangesView {
     this.commitBtn.on('click', () => {
       this.executeCommit();
     });
+  }
+
+  handleCtrlC() {
+    const idx = this.fileList.selected;
+    if (this.filesData && this.filesData[idx]) {
+      const filePath = this.filesData[idx].path;
+      copyPathToClipboard(filePath);
+      this.screen.emit('notify', `✓ Copied file path to clipboard: ${filePath}`);
+      return true;
+    }
+    return false;
   }
 
   async refresh() {
@@ -298,15 +331,22 @@ export class ChangesView {
 
       const listItems = this.filesData.map(file => {
         const checkbox = file.staged ? '{green-fg}[x]{/green-fg}' : '{gray-fg}[ ]{/gray-fg}';
-        
+        const marked = this.markedPaths.has(file.path) ? '{red-fg}✗{/red-fg} ' : '  ';
+
         let badge = '{yellow-fg}M{/yellow-fg}';
         if (file.status === 'A') badge = '{green-fg}A{/green-fg}';
         else if (file.status === 'D') badge = '{red-fg}D{/red-fg}';
         else if (file.status === '?') badge = '{magenta-fg}?{/magenta-fg}';
 
         const mdBadge = this.isMarkdownFile(file.path) ? ' {magenta-fg}[R]{/magenta-fg}' : '';
-        return `${checkbox} ${badge} ${file.path}${mdBadge}`;
+        return `${checkbox} ${marked}${badge} ${file.path}${mdBadge}`;
       });
+
+      // Prune marks pointing to files that no longer exist in the status.
+      const validPaths = new Set(this.filesData.map(f => f.path));
+      for (const p of [...this.markedPaths]) {
+        if (!validPaths.has(p)) this.markedPaths.delete(p);
+      }
 
       const currentIdx = Math.min(this.fileList.selected || 0, listItems.length - 1);
       this.fileList.setItems(listItems);
@@ -354,6 +394,65 @@ export class ChangesView {
     await this.gitService.unstageAll();
     await this.refresh();
     if (this.onStatusChanged) this.onStatusChanged();
+  }
+
+  toggleMarkSelected() {
+    const idx = this.fileList.selected;
+    if (!this.filesData || !this.filesData[idx]) return;
+    const file = this.filesData[idx];
+    if (this.markedPaths.has(file.path)) {
+      this.markedPaths.delete(file.path);
+      this.screen.emit('notify', `Unmarked: ${file.path}`);
+    } else {
+      this.markedPaths.add(file.path);
+      this.screen.emit('notify', `Marked for undo: ${file.path} (${this.markedPaths.size} marked)`);
+    }
+    this.refresh();
+  }
+
+  getMarkedFiles() {
+    if (!this.markedPaths.size) return [];
+    const statuses = this.filesData;
+    return statuses.filter(f => this.markedPaths.has(f.path)).map(f => ({
+      path: f.path,
+      isUntracked: f.status === '?'
+    }));
+  }
+
+  requestUndoMarked() {
+    const marked = this.getMarkedFiles();
+    if (!marked.length) {
+      this.screen.emit('notify', 'No files marked for undo. Press [x] on a file to mark it first.');
+      return;
+    }
+    const names = marked.slice(0, 5).map(f => f.path).join('\n');
+    const more = marked.length > 5 ? `\n...and ${marked.length - 5} more` : '';
+    const question =
+      `{bold}{red-fg}Revert all changes in the following file(s)?{/red-fg}{/bold}\n\n` +
+      `{yellow-fg}${names}${more}{/yellow-fg}\n\n` +
+      `This discards unstaged AND staged modifications (they will be lost).`;
+    this.screen.emit('confirm-undo-marked', question, marked);
+  }
+
+  async doUndoMarked(marked) {
+    let success = 0;
+    let failed = 0;
+    for (const f of marked) {
+      try {
+        await this.gitService.undoChanges(f.path, f.isUntracked);
+        success++;
+      } catch {
+        failed++;
+      }
+    }
+    this.markedPaths.clear();
+    await this.refresh();
+    if (this.onStatusChanged) this.onStatusChanged();
+    if (failed === 0) {
+      this.screen.emit('notify', `✓ Reverted changes in ${success} file(s).`);
+    } else {
+      this.screen.emit('notify', `Reverted ${success} file(s), ${failed} failed.`);
+    }
   }
 
   async executeCommit() {

@@ -44,6 +44,7 @@ export class AboutModal {
       '  • {green-fg}4: Stash{/green-fg}     - Cajón para guardar, aplicar y descartar stashes.',
       '  • {green-fg}5: GitHub{/green-fg}    - Listado de Pull Requests, Issues y Repositorios.',
       '  • {green-fg}6: Repos{/green-fg}     - Gestor unificado de repositorios locales y clonados.',
+      '  • {green-fg}9: Settings{/green-fg}   - Integración remota (gh / glab / custom).',
       '',
       '{center}{gray-fg}Pulsa Esc o q para cerrar esta ventana{/gray-fg}{/center}'
     ].join('\n');

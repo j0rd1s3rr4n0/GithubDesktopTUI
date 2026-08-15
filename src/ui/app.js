@@ -26,6 +26,11 @@ import { ErrorModal } from './modals/error-modal.js';
 import { ReadmeModal } from './modals/readme-modal.js';
 import { MarkdownDiffModal } from './modals/markdown-diff-modal.js';
 import { CreateRepoModal } from './modals/create-repo-modal.js';
+import { SettingsModal } from './modals/settings-modal.js';
+import { UpdateModal } from './modals/update-modal.js';
+import { LanguageModal } from './modals/language-modal.js';
+import { SettingsView } from './views/settings-view.js';
+import { checkForUpdates } from '../git/updater.js';
 
 export class App {
   constructor(targetRepoPath = process.cwd()) {
@@ -70,6 +75,16 @@ export class App {
     this.switchTab(0);
     this.updateI18nLabels();
     this.screen.render();
+    this.autoCheckUpdates();
+  }
+
+  async autoCheckUpdates() {
+    try {
+      const res = await checkForUpdates();
+      if (res.updateAvailable) {
+        this.notify(`⬆ Update available: v${res.latestVersion} (current v${res.currentVersion}). Press Ctrl+U to update.`);
+      }
+    } catch {}
   }
 
   async switchRepositoryPath(newPath) {
@@ -187,7 +202,8 @@ export class App {
       'tabGithub',
       'tabRepos',
       'tabAbout',
-      'tabAccount'
+      'tabAccount',
+      'tabSettings'
     ];
 
     let currentLeft = 1;
@@ -243,7 +259,8 @@ export class App {
       new GithubView(this.screen, this.ghService, viewOptions),
       new ReposView(this.screen, this, viewOptions),
       new AboutView(this.screen, this, viewOptions),
-      new AccountView(this.screen, this, viewOptions)
+      new AccountView(this.screen, this, viewOptions),
+      new SettingsView(this.screen, this.ghService, viewOptions)
     ];
 
     // Give GithubView access to gitService for remote origin checks
@@ -277,6 +294,15 @@ export class App {
     this.authModal = new AuthModal(this.screen, this.ghService, async () => {
       await this.refreshGlobalHeader();
       this.views[this.activeTab].refresh();
+    });
+
+    this.settingsModal = new SettingsModal(this.screen, this.ghService);
+    this.updateModal = new UpdateModal(this.screen);
+
+    this.languageModal = new LanguageModal(this.screen, (lang) => {
+      I18nService.setLanguage(lang);
+      this.notify(`Language changed to: ${lang.toUpperCase()}`);
+      this.updateI18nLabels();
     });
 
     this.branchModal = new BranchModal(this.screen, async (name, checkout) => {
@@ -392,7 +418,8 @@ export class App {
         currentBranch: status.currentBranch,
         ahead: status.ahead,
         behind: status.behind,
-        ghUser: this.ghUser
+        ghUser: this.ghUser,
+        remoteType: auth.remoteType
       });
       this.screen.render();
     } catch {
@@ -418,6 +445,9 @@ export class App {
       (this.readmeModal && this.readmeModal.box && this.readmeModal.box.visible) ||
       (this.markdownDiffModal && this.markdownDiffModal.box && this.markdownDiffModal.box.visible) ||
       (this.authModal && this.authModal.box && this.authModal.box.visible) ||
+      (this.settingsModal && this.settingsModal.box && this.settingsModal.box.visible) ||
+      (this.updateModal && this.updateModal.box && this.updateModal.box.visible) ||
+      (this.languageModal && this.languageModal.box && this.languageModal.box.visible) ||
       (this.branchModal && this.branchModal.form && this.branchModal.form.visible) ||
       (this.stashModal && this.stashModal.form && this.stashModal.form.visible) ||
       (this.confirmModal && this.confirmModal.box && this.confirmModal.box.visible) ||
@@ -458,6 +488,15 @@ export class App {
     } else if (this.helpModal && this.helpModal.modal && this.helpModal.modal.visible) {
       this.helpModal.hide();
       closed = true;
+    } else if (this.settingsModal && this.settingsModal.box && this.settingsModal.box.visible) {
+      this.settingsModal.hide();
+      closed = true;
+    } else if (this.updateModal && this.updateModal.box && this.updateModal.box.visible) {
+      this.updateModal.hide();
+      closed = true;
+    } else if (this.languageModal && this.languageModal.box && this.languageModal.box.visible) {
+      this.languageModal.hide();
+      closed = true;
     } else if (this.authModal && this.authModal.box && this.authModal.box.visible) {
       this.authModal.hide();
       closed = true;
@@ -485,7 +524,22 @@ export class App {
   }
 
   initEvents() {
-    this.screen.key(['C-c', 'S-q'], () => {
+    this.screen.key(['C-c'], () => {
+      // Blessed emits to the screen BEFORE the focused element, so Ctrl+C used
+      // as a copy shortcut in lists/modals would be swallowed by the quit
+      // handler. Delegate the copy to the active view (or open modal) first.
+      if (this.hasOpenModal()) {
+        // Modal elements (readme, markdown-diff) handle Ctrl+C for copy.
+        return;
+      }
+      const view = this.views[this.activeTab];
+      if (view && typeof view.handleCtrlC === 'function' && view.handleCtrlC()) {
+        return;
+      }
+      process.exit(0);
+    });
+
+    this.screen.key(['S-q'], () => {
       process.exit(0);
     });
 
@@ -553,13 +607,14 @@ export class App {
     this.screen.key(['6'], () => this.switchTab(5));
     this.screen.key(['7'], () => this.switchTab(6));
     this.screen.key(['8'], () => this.switchTab(7));
+    this.screen.key(['9'], () => this.switchTab(8));
 
     this.screen.key(['C-right', '>'], () => {
-      this.switchTab((this.activeTab + 1) % 8);
+      this.switchTab((this.activeTab + 1) % 9);
     });
 
     this.screen.key(['C-left', '<'], () => {
-      this.switchTab((this.activeTab - 1 + 8) % 8);
+      this.switchTab((this.activeTab - 1 + 9) % 9);
     });
 
     this.screen.key(['f1', '?'], () => {
@@ -576,9 +631,36 @@ export class App {
       this.updateI18nLabels();
     });
 
+    this.screen.key(['S-f3'], () => {
+      if (!this.hasOpenModal()) {
+        this.languageModal.show();
+      }
+    });
+
+    // Some terminals send Shift+F3 as CSI 1;2R (xterm F1-F4 style). Blessed
+    // parses that sequence with key.name 'undefined' and silently drops it, so
+    // the 'S-f3' binding cannot catch it — detect it on the raw byte stream.
+    let sftF3Buf = Buffer.alloc(0);
+    this.screen.program.on('data', (data) => {
+      sftF3Buf = Buffer.concat([sftF3Buf, Buffer.from(data)]);
+      let hit;
+      while ((hit = sftF3Buf.indexOf('\x1b[1;2R')) !== -1) {
+        if (!this.hasOpenModal()) {
+          this.languageModal.show();
+        }
+        sftF3Buf = sftF3Buf.slice(hit + 6);
+      }
+      if (sftF3Buf.length > 8) sftF3Buf = sftF3Buf.slice(-8);
+    });
+
     this.screen.key(['r'], async () => {
       await this.refreshGlobalHeader();
-      this.views[this.activeTab].refresh();
+      const view = this.views[this.activeTab];
+      if (this.activeTab === 5 && view && typeof view.refresh === 'function') {
+        await view.refresh(true); // Force-refresh fork metadata on the Repositories tab
+      } else if (view && typeof view.refresh === 'function') {
+        view.refresh();
+      }
       this.notify(I18nService.t('refreshedNotice'));
     });
 
@@ -617,6 +699,43 @@ export class App {
     this.screen.key(['p'], async () => {
       if (!this.hasOpenModal() && this.activeTab !== 0 && this.activeTab !== 3 && this.activeTab !== 5) {
         await this.executePull();
+      }
+    });
+
+    this.screen.key(['C-p'], async () => {
+      if (!this.hasOpenModal() && this.activeTab !== 0 && this.activeTab !== 3 && this.activeTab !== 5) {
+        await this.executePull();
+      }
+    });
+
+    this.screen.key([','], () => {
+      const changesView = this.views[0];
+      const typingInInput = this.activeTab === 0 && changesView && changesView.isInputFocused();
+      if (!this.hasOpenModal() && !typingInInput) {
+        this.settingsModal.show();
+      }
+    });
+
+    this.screen.key(['C-u'], () => {
+      const changesView = this.views[0];
+      const typingInInput = this.activeTab === 0 && changesView && changesView.isInputFocused();
+      if (!this.hasOpenModal() && !typingInInput) {
+        this.updateModal.show();
+      }
+    });
+
+    this.screen.on('confirm-undo-marked', (question, marked) => {
+      this.confirmModal.ask(question, async () => {
+        if (this.views[0] && typeof this.views[0].doUndoMarked === 'function') {
+          await this.views[0].doUndoMarked(marked);
+        }
+      });
+    });
+
+    this.screen.on('settings-saved', async () => {
+      await this.refreshGlobalHeader();
+      if (this.views[this.activeTab] && typeof this.views[this.activeTab].refresh === 'function') {
+        this.views[this.activeTab].refresh();
       }
     });
 

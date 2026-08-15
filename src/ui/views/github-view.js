@@ -126,6 +126,7 @@ export class GithubView {
       vi: true,
       mouse: true,
       scrollable: true,
+      wordWrap: false,
       scrollbar: { ch: '█', style: { fg: 'cyan' } }
     });
   }
@@ -163,10 +164,19 @@ export class GithubView {
     }
 
     const auth = await this.ghService.getAuthStatus();
+
+    if (auth.remoteType === 'custom') {
+      this.prList.setItems(['{yellow-fg}Custom Remote mode — GitHub/GitLab browsing disabled.{/yellow-fg}']);
+      this.issueList.setItems(['{yellow-fg}Press [ , ] to open Settings and configure the remote.{/yellow-fg}']);
+      this.repoList.setItems(['{yellow-fg}Set a custom remote URL in Settings ( , ).{/yellow-fg}']);
+      this.screen.render();
+      return;
+    }
+
     if (!auth.isLoggedIn) {
-      this.prList.setItems(['{yellow-fg}GitHub CLI not authenticated. Press [L] to login.{/yellow-fg}']);
-      this.issueList.setItems(['{yellow-fg}Press [L] to authenticate with GitHub CLI.{/yellow-fg}']);
-      this.repoList.setItems(['{yellow-fg}Press [L] to authenticate with GitHub CLI.{/yellow-fg}']);
+      this.prList.setItems(['{yellow-fg}Git CLI not authenticated. Press [L] to login.{/yellow-fg}']);
+      this.issueList.setItems(['{yellow-fg}Press [L] to authenticate with GitHub/GitLab CLI.{/yellow-fg}']);
+      this.repoList.setItems(['{yellow-fg}Press [L] to authenticate with GitHub/GitLab CLI.{/yellow-fg}']);
       this.screen.render();
       return;
     }
@@ -189,13 +199,40 @@ export class GithubView {
 
     try {
       const repos = await this.ghService.getUserRepos();
-      const repoItems = repos.map(r => `{cyan-fg}${r.nameWithOwner}{/cyan-fg} {gray-fg}(${r.isPrivate ? 'Private' : 'Public'}){/gray-fg}`);
+      const listW = this.getRepoListWidth();
+      const nameBudget = Math.max(6, Math.floor(listW * 0.6));
+      const repoItems = repos.map(r => {
+        const name = this.fitListText(r.nameWithOwner, nameBudget);
+        const raw = `{cyan-fg}${name}{/cyan-fg} {gray-fg}(${r.isPrivate ? 'Private' : 'Public'}){/gray-fg}`;
+        return this.padListRow(raw, listW);
+      });
       this.repoList.setItems(repoItems.length ? repoItems : ['{gray-fg}No repositories found{/gray-fg}']);
     } catch {
       this.repoList.setItems(['{gray-fg}Failed to fetch repositories{/gray-fg}']);
     }
 
     this.screen.render();
+  }
+
+  getRepoListWidth() {
+    const w = this.repoList.width;
+    if (typeof w === 'number' && w > 0) return Math.max(10, w - 2);
+    return Math.max(10, this.screen.width - 2);
+  }
+
+  fitListText(s, max) {
+    s = String(s || '');
+    if (s.length <= max) return s;
+    if (max <= 1) return '…';
+    return s.slice(0, max - 1) + '…';
+  }
+
+  padListRow(s, width) {
+    s = String(s || '');
+    const plain = s.replace(/\{\/?[a-z0-9]*(?:-[a-z0-9]+)*\}/gi, '');
+    const len = plain.length;
+    if (len >= width) return s;
+    return s + '{/}' + ' '.repeat(width - len);
   }
 
   show() {

@@ -143,14 +143,21 @@ export class AboutView {
     this.refreshBtn.on('press', refreshProfile);
     this.refreshBtn.on('click', refreshProfile);
 
-    const copyProfileUrl = () => {
-      const url = 'https://github.com/j0rd1s3rr4n0';
-      copyPathToClipboard(url);
-      this.app.notify(`✓ Copied GitHub profile URL to clipboard: ${url}`);
-    };
+    const copyProfileUrl = () => this.copyProfileUrl();
 
-    this.profileBox.key(['y', 'C-c'], copyProfileUrl);
-    this.infoBox.key(['y', 'C-c'], copyProfileUrl);
+    this.profileBox.key(['y'], copyProfileUrl);
+    this.infoBox.key(['y'], copyProfileUrl);
+  }
+
+  copyProfileUrl() {
+    const url = 'https://github.com/j0rd1s3rr4n0';
+    copyPathToClipboard(url);
+    this.app.notify(`✓ Copied GitHub profile URL to clipboard: ${url}`);
+  }
+
+  handleCtrlC() {
+    this.copyProfileUrl();
+    return true;
   }
 
   generateAnsiAvatarSync(imagePath) {
@@ -275,6 +282,7 @@ print("\\n".join(lines))
       `  • {green-fg}6: Repositories{/green-fg}- Unified local & cloned repo switcher`,
       `  • {green-fg}7: About{/green-fg}       - Selectable Profile & Copyable Info (y/Ctrl+C)`,
       `  • {green-fg}8: My Account{/green-fg}  - User Profile & Code Statistics`,
+      `  • {green-fg}9: Settings{/green-fg}     - Remote Integration (gh / glab / custom)`,
       '',
       `{bold}{yellow-fg}Active Language:{/yellow-fg}{/bold} {green-fg}${currentLang}{/green-fg}`
     ].join('\n');

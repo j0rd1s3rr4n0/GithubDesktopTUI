@@ -20,7 +20,7 @@ export class Header {
     this.lastData = null;
   }
 
-  update({ repoName, currentBranch, ahead = 0, behind = 0, ghUser = null } = {}) {
+  update({ repoName, currentBranch, ahead = 0, behind = 0, ghUser = null, remoteType = 'github' } = {}) {
     if (arguments[0]) {
       this.lastData = arguments[0];
     }
@@ -40,6 +40,11 @@ export class Header {
     let ghStatus = `{yellow-fg}${I18nService.t('headerUser')} ${I18nService.t('notLoggedIn')} [L]{/yellow-fg}`;
     if (data.ghUser) {
       ghStatus = `{cyan-fg}${I18nService.t('headerUser')} @${data.ghUser}{/cyan-fg}`;
+    }
+    if (data.remoteType === 'custom') {
+      ghStatus = '{yellow-fg}Custom Remote{/yellow-fg}';
+    } else if (data.remoteType === 'gitlab') {
+      ghStatus = `{magenta-fg}GitLab{/magenta-fg} ${ghStatus}`;
     }
 
     const content = `${repoText}   ${I18nService.t('headerBranch')} ${branchBadge}   Sync: ${syncText}   ${ghStatus}`;

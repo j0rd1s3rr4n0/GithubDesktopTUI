@@ -22,6 +22,15 @@ const __dirname = path.dirname(__filename);
 const PROJECT_ROOT = path.resolve(__dirname, '..');
 const INSTALL_MARKER = path.join(os.homedir(), '.gd_installed');
 
+// ─── Single source of truth for the version: package.json ───────────────────
+const APP_VERSION = (() => {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(PROJECT_ROOT, 'package.json'), 'utf8')).version || '0.0.0';
+  } catch {
+    return '0.0.0';
+  }
+})();
+
 // ─── CLI flags ───────────────────────────────────────────────────────────────
 const args = process.argv.slice(2);
 
@@ -37,6 +46,7 @@ Terminal User Interface for Git inspired by GitHub Desktop.
 \x1b[1mOptions:\x1b[0m
   -h, --help       Show this help screen
   -v, --version    Show version number
+  -u, --update     Check for & apply updates from the official repository
   --install        Install gd & ghtui globally (create symlinks in /usr/local/bin)
   --uninstall      Remove global gd & ghtui symlinks
 
@@ -46,13 +56,17 @@ Terminal User Interface for Git inspired by GitHub Desktop.
   Space          Stage / Unstage file in Changes view
   a / u          Stage ALL / Unstage ALL
   c              Focus Commit Summary box
-  Ctrl+Enter     Execute Commit
+  Ctrl+Enter     Execute Commit (Enter also works while typing the summary)
   b / n          New Branch Modal
   s              Stash Changes Modal
   G              Publish repo to GitHub (Public / Private)
   L              Check GitHub Auth status
   P (Shift+P)    Push commits
-  p              Pull commits
+  p / Ctrl+P     Pull commits
+  ,              Settings: remote integration (GitHub / GitLab / custom)
+  Ctrl+U         Check & apply app updates
+  F3 / Shift+F3  Cycle language / Language selection menu
+  x / Shift+U    Mark files / Undo (revert) marked files in Changes view
   m / Ctrl+M     View README / Markdown interpreter
   r              Refresh Git status
   ? / F1         Toggle Help modal
@@ -62,7 +76,42 @@ Terminal User Interface for Git inspired by GitHub Desktop.
 }
 
 if (args.includes('--version') || args.includes('-v')) {
-  console.log('gd v1.0.0');
+  console.log(`gd v${APP_VERSION}`);
+  process.exit(0);
+}
+
+// ─── Update: check & apply updates from the official repository ─────────────
+if (args.includes('--update') || args.includes('-u')) {
+  const { checkForUpdates, applyUpdate } = await import('../src/git/updater.js');
+  const res = await checkForUpdates();
+  console.log(`\x1b[1m\x1b[36mGitHub Desktop TUI — Update Check\x1b[0m`);
+  console.log(`  Current version:  \x1b[33mv${res.currentVersion}\x1b[0m`);
+  if (res.error) {
+    console.log(`  \x1b[31m✗ ${res.error}\x1b[0m`);
+    process.exit(1);
+  }
+  console.log(`  Latest version:   \x1b[32mv${res.latestVersion}\x1b[0m`);
+  if (res.updateAvailable) {
+    console.log(`\n\x1b[32m\x1b[1m✓ A new version is available!\x1b[0m`);
+    const rl = createInterface({ input: process.stdin, output: process.stdout });
+    rl.question(`\n\x1b[1mApply update now (git pull + npm ci)? [Y/n]: \x1b[0m`, (answer) => {
+      rl.close();
+      const ans = (answer || 'y').trim().toLowerCase();
+      if (ans === 'y' || ans === 'yes') {
+        const up = applyUpdate();
+        if (up.success) {
+          console.log(`\n\x1b[32m✓ Update applied:\x1b[0m\n${up.output}`);
+        } else {
+          console.log(`\n\x1b[31m✗ Update failed:\x1b[0m\n${up.output}`);
+          process.exit(1);
+        }
+      } else {
+        console.log('\n  Skipped.');
+      }
+    });
+  } else {
+    console.log(`\n\x1b[33m✓ You are up to date.\x1b[0m  ${res.url}`);
+  }
   process.exit(0);
 }
 
@@ -102,7 +151,7 @@ function installGlobally() {
     fs.writeFileSync(INSTALL_MARKER, JSON.stringify({
       installedAt: new Date().toISOString(),
       projectRoot: PROJECT_ROOT,
-      version: '1.0.0'
+      version: APP_VERSION
     }), 'utf-8');
   } catch {}
 
@@ -160,7 +209,7 @@ async function checkFirstRun() {
       fs.writeFileSync(INSTALL_MARKER, JSON.stringify({
         installedAt: new Date().toISOString(),
         projectRoot: PROJECT_ROOT,
-        version: '1.0.0',
+        version: APP_VERSION,
         method: 'pre-existing'
       }), 'utf-8');
     } catch {}
@@ -207,7 +256,7 @@ async function checkFirstRun() {
           fs.writeFileSync(INSTALL_MARKER, JSON.stringify({
             installedAt: new Date().toISOString(),
             projectRoot: PROJECT_ROOT,
-            version: '1.0.0',
+            version: APP_VERSION,
             method: 'declined'
           }), 'utf-8');
         } catch {}

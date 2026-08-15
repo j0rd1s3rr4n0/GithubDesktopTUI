@@ -106,6 +106,7 @@ export class AccountView {
       vi: true,
       mouse: true,
       scrollable: true,
+      wordWrap: false,
       scrollbar: { ch: '█', style: { fg: 'yellow' } }
     });
 
@@ -147,7 +148,7 @@ export class AccountView {
       }
     });
 
-    this.userReposList.key(['y', 'C-c'], () => {
+    this.userReposList.key(['y'], () => {
       const idx = this.userReposList.selected;
       if (this.userRepos && this.userRepos[idx]) {
         const repoUrl = this.userRepos[idx].url || `https://github.com/${this.userRepos[idx].nameWithOwner}`;
@@ -156,7 +157,7 @@ export class AccountView {
       }
     });
 
-    this.profileBox.key(['y', 'C-c'], () => {
+    this.profileBox.key(['y'], () => {
       if (this.currentUserObj && this.currentUserObj.html_url) {
         copyPathToClipboard(this.currentUserObj.html_url);
         this.app.notify(`✓ Copied user profile URL to clipboard: ${this.currentUserObj.html_url}`);
@@ -172,6 +173,65 @@ export class AccountView {
         }
       }
     });
+  }
+
+  handleCtrlC() {
+    if (this.screen.focused === this.userReposList) {
+      const idx = this.userReposList.selected;
+      if (this.userRepos && this.userRepos[idx]) {
+        const repoUrl = this.userRepos[idx].url || `https://github.com/${this.userRepos[idx].nameWithOwner}`;
+        copyPathToClipboard(repoUrl);
+        this.app.notify(`✓ Copied repository URL to clipboard: ${repoUrl}`);
+        return true;
+      }
+    }
+    if (this.currentUserObj && this.currentUserObj.html_url) {
+      copyPathToClipboard(this.currentUserObj.html_url);
+      this.app.notify(`✓ Copied user profile URL to clipboard: ${this.currentUserObj.html_url}`);
+      return true;
+    }
+    return false;
+  }
+
+  getReposListWidth() {
+    const w = this.userReposList.width;
+    const inner = typeof w === 'number' && w > 0 ? w : Math.floor(this.screen.width * 0.56);
+    return Math.max(10, inner - 3);
+  }
+
+  strWidth(s) {
+    try {
+      return this.userReposList.strWidth(s);
+    } catch {
+      return String(s || '').length;
+    }
+  }
+
+  fitListText(s, max) {
+    s = String(s || '');
+    if (this.strWidth(s) <= max) return s;
+    if (max <= 1) return '…';
+    let out = '';
+    for (const ch of s) {
+      if (this.strWidth(out + ch) > max - 1) break;
+      out += ch;
+    }
+    return out + '…';
+  }
+
+  padListRow(s, width) {
+    s = String(s || '');
+    const len = this.strWidth(s);
+    if (len >= width) return s;
+    return s + '{/}' + ' '.repeat(width - len);
+  }
+
+  padCell(s, width, align = 'left') {
+    s = String(s || '');
+    const len = this.strWidth(s);
+    if (len >= width) return s;
+    const pad = ' '.repeat(width - len);
+    return align === 'right' ? pad + s : s + pad;
   }
 
   generateAnsiAvatarSync(imagePath) {
@@ -214,14 +274,15 @@ print("\\n".join(lines))
     let commitCount = 0;
     let addedLines = 0;
     let deletedLines = 0;
+    const cwd = (this.app && this.app.gitService && this.app.gitService.repoPath) || process.cwd();
 
     try {
-      const { stdout: commitsOut } = await execAsync('git rev-list --count HEAD');
+      const { stdout: commitsOut } = await execAsync('git rev-list --count HEAD', { cwd });
       commitCount = parseInt(commitsOut.trim(), 10) || 0;
     } catch {}
 
     try {
-      const { stdout: statOut } = await execAsync('git log --shortstat');
+      const { stdout: statOut } = await execAsync('git log --shortstat', { cwd });
       const insertionsMatches = statOut.match(/(\d+)\s+insertions?\(\+\)/g);
       const deletionsMatches = statOut.match(/(\d+)\s+deletions?\(-\)/g);
 
@@ -243,99 +304,22 @@ print("\\n".join(lines))
     return { commitCount, addedLines, deletedLines };
   }
 
-  async refresh() {
-    this.updateI18nLabels();
-    this.profileDetailsBox.setContent('{cyan-fg}Loading GitHub account API data & statistics...{/cyan-fg}');
-    this.screen.render();
-
-    const auth = await this.app.ghService.getAuthStatus();
-    let userObj = null;
-    let userOrgs = [];
-
-    if (auth.isLoggedIn) {
-      try {
-        const { stdout } = await execAsync('gh api user');
-        userObj = JSON.parse(stdout);
-        this.currentUserObj = userObj;
-      } catch {}
-
-      try {
-        const { stdout: orgsOut } = await execAsync('gh api user/orgs');
-        userOrgs = JSON.parse(orgsOut);
-      } catch {}
-    }
-
-    if (!userObj) {
-      this.avatarBox.setContent('\x1b[33m  🔑 Not Authenticated with GitHub  \x1b[0m');
-      this.profileDetailsBox.setContent([
-        '{yellow-fg}{bold}Status:{/bold} Not Logged In{/yellow-fg}',
-        '',
-        'Press {cyan-fg}[L]{/cyan-fg} or click the button below to authenticate with GitHub CLI.',
-        'Once logged in, your full GitHub API metrics, organizations, avatar, and personal repos will load automatically.'
-      ].join('\n'));
-      this.userReposList.setItems(['{yellow-fg}Press [L] to authenticate with GitHub CLI{/yellow-fg}']);
-    } else {
-      try {
-        if (userObj.avatar_url) {
-          execSync(`curl -s -L "${userObj.avatar_url}" -o "${USER_AVATAR_PATH}"`);
-        }
-      } catch {}
-
-      let ansiArt = null;
-      if (fs.existsSync(USER_AVATAR_PATH)) {
-        ansiArt = this.generateAnsiAvatarSync(USER_AVATAR_PATH);
-      }
-
+  async downloadAvatarAsync(url) {
+    try {
+      await execAsync(`curl -s -L --max-time 15 "${url}" -o "${USER_AVATAR_PATH}"`);
+      if (!fs.existsSync(USER_AVATAR_PATH)) return;
+      const ansiArt = this.generateAnsiAvatarSync(USER_AVATAR_PATH);
       if (ansiArt) {
         this.avatarBox.setContent(ansiArt);
-      } else {
-        this.avatarBox.setContent(`\x1b[35m  🐙 @${userObj.login} Avatar  \x1b[0m`);
+        this.screen.render();
       }
+    } catch {}
+  }
 
-      const orgsStr = userOrgs.length ? userOrgs.map(o => `{magenta-fg}@${o.login}{/magenta-fg}`).join(', ') : '{gray-fg}None{/gray-fg}';
+  async refresh() {
+    this.updateI18nLabels();
 
-      const profileContent = [
-        `{bold}{yellow-fg}Username:{/yellow-fg}{/bold}  @${userObj.login}`,
-        `{bold}{yellow-fg}Name:{/yellow-fg}{/bold}      ${userObj.name || 'N/A'}`,
-        `{bold}{yellow-fg}Company:{/yellow-fg}{/bold}   ${userObj.company || 'N/A'}`,
-        `{bold}{yellow-fg}Location:{/yellow-fg}{/bold}  ${userObj.location || 'N/A'}`,
-        `{bold}{yellow-fg}Email:{/yellow-fg}{/bold}     ${userObj.email || 'N/A'}`,
-        `{bold}{yellow-fg}Website:{/yellow-fg}{/bold}   ${userObj.blog || 'N/A'}`,
-        `{bold}{yellow-fg}Twitter/X:{/yellow-fg} @${userObj.twitter_username || 'N/A'}`,
-        `{bold}{yellow-fg}Hireable:{/yellow-fg}  ${userObj.hireable ? '{green-fg}Yes ✓{/green-fg}' : 'No'}`,
-        `{bold}{yellow-fg}GitHub:{/yellow-fg}{/bold}    {cyan-fg}${userObj.html_url}{/cyan-fg}`,
-        '',
-        `{bold}{yellow-fg}Bio:{/yellow-fg}{/bold}`,
-        `  "${userObj.bio || 'No bio provided'}"`,
-        '',
-        `{bold}{yellow-fg}GitHub Organizations:{/yellow-fg}{/bold}`,
-        `  ${orgsStr}`,
-        '',
-        `{bold}{yellow-fg}GitHub Account API Metrics:{/yellow-fg}{/bold}`,
-        `  • {green-fg}Public Repositories:{/green-fg} ${userObj.public_repos}`,
-        `  • {green-fg}Public Gists:{/green-fg}        ${userObj.public_gists || 0}`,
-        `  • {green-fg}Followers:{/green-fg}           ${userObj.followers}`,
-        `  • {green-fg}Following:{/green-fg}           ${userObj.following}`,
-        `  • {green-fg}Account Created:{/green-fg}     ${(userObj.created_at || '').slice(0, 10)}`,
-        '',
-        ' {gray-fg}(Press y or Ctrl+C to copy profile URL to clipboard){/gray-fg}'
-      ].join('\n');
-
-      this.profileDetailsBox.setContent(profileContent);
-
-      try {
-        const repos = await this.app.ghService.getUserRepos();
-        this.userRepos = repos;
-        const items = repos.map(r => {
-          const vis = r.isPrivate ? '{magenta-fg}🔒 Private{/magenta-fg}' : '{green-fg}🌐 Public{/green-fg}';
-          const lang = r.primaryLanguage && r.primaryLanguage.name ? `{yellow-fg}[${r.primaryLanguage.name}]{/yellow-fg} ` : '';
-          return `${vis} ${lang}{bold}${r.nameWithOwner}{/bold} {yellow-fg}★ ${r.stargazerCount || 0}{/yellow-fg}`;
-        });
-        this.userReposList.setItems(items.length ? items : ['{gray-fg}No personal repositories found{/gray-fg}']);
-      } catch {
-        this.userReposList.setItems(['{red-fg}Failed to fetch user repositories via GitHub API{/red-fg}']);
-      }
-    }
+    const auth = await this.app.ghService.getAuthStatus();
 
     const gitStats = await this.fetchGitCodeStats();
     const appStats = RepoStore.getStats();
@@ -356,10 +340,127 @@ print("\\n".join(lines))
       `  • {bold}Cloned GitHub Repos:{/bold}          ${appStats.clonedCount} repos`,
       '',
       '{bold}{yellow-fg}🌐 GitHub Service Integration:{/yellow-fg}{/bold}',
-      `  • {bold}Authentication Status:{/bold}        ${auth.isLoggedIn ? '{green-fg}✓ Connected{/green-fg}' : '{red-fg}✗ Disconnected{/red-fg}'}`
+      `  • {bold}Authentication Status:{/bold}        ${auth?.isLoggedIn ? '{green-fg}✓ Connected{/green-fg}' : '{red-fg}✗ Disconnected{/red-fg}'}`
     ].join('\n');
 
     this.statsBox.setContent(statsContent);
+    this.screen.render();
+
+    let userObj = null;
+    let userOrgs = [];
+
+    if (auth.remoteType === 'custom') {
+      this.avatarBox.setContent('\x1b[33m  🔧 Custom Git Server Mode  \x1b[0m');
+      this.profileDetailsBox.setContent([
+        '{yellow-fg}{bold}Status:{/bold} Custom Remote Mode{/yellow-fg}',
+        '',
+        'The GitHub/GitLab CLI integration is disabled.',
+        'Configure your remote in Settings (press {cyan-fg},{/cyan-fg}).',
+        '',
+        'Code statistics & activity are still shown on the right.'
+      ].join('\n'));
+      this.userReposList.setItems(['{gray-fg}Repo browsing requires GitHub (gh) or GitLab (glab).{/gray-fg}']);
+      this.screen.render();
+      return;
+    }
+
+    this.profileDetailsBox.setContent('{cyan-fg}Loading GitHub/GitLab account API data...{/cyan-fg}');
+    this.screen.render();
+
+    if (auth.isLoggedIn) {
+      try {
+        userObj = await this.app.ghService.getUser();
+        this.currentUserObj = userObj;
+      } catch {}
+
+      try {
+        userOrgs = await this.app.ghService.getUserOrgs();
+      } catch {}
+    }
+
+    if (!userObj) {
+      this.avatarBox.setContent('\x1b[33m  🔑 Not Authenticated  \x1b[0m');
+      this.profileDetailsBox.setContent([
+        '{yellow-fg}{bold}Status:{/bold} Not Logged In{/yellow-fg}',
+        '',
+        'Press {cyan-fg}[L]{/cyan-fg} or click the button below to authenticate with GitHub CLI (gh) / GitLab CLI (glab).',
+        'Once logged in, your full account metrics, organizations, avatar, and personal repos will load automatically.'
+      ].join('\n'));
+      this.userReposList.setItems(['{yellow-fg}Press [L] to authenticate with GitHub CLI / GitLab CLI{/yellow-fg}']);
+      this.screen.render();
+      return;
+    }
+
+    if (userObj.avatar_url) {
+      this.downloadAvatarAsync(userObj.avatar_url);
+    }
+
+    let ansiArt = null;
+    if (fs.existsSync(USER_AVATAR_PATH)) {
+      ansiArt = this.generateAnsiAvatarSync(USER_AVATAR_PATH);
+    }
+
+    if (ansiArt) {
+      this.avatarBox.setContent(ansiArt);
+    } else {
+      this.avatarBox.setContent(`\x1b[35m  🐙 @${userObj.login} Avatar  \x1b[0m`);
+    }
+
+    const orgsStr = userOrgs.length ? userOrgs.map(o => `{magenta-fg}@${o.login}{/magenta-fg}`).join(', ') : '{gray-fg}None{/gray-fg}';
+
+    const profileContent = [
+      `{bold}{yellow-fg}Username:{/yellow-fg}{/bold}  @${userObj.login}`,
+      `{bold}{yellow-fg}Name:{/yellow-fg}{/bold}      ${userObj.name || 'N/A'}`,
+      `{bold}{yellow-fg}Company:{/yellow-fg}{/bold}   ${userObj.company || 'N/A'}`,
+      `{bold}{yellow-fg}Location:{/yellow-fg}{/bold}  ${userObj.location || 'N/A'}`,
+      `{bold}{yellow-fg}Email:{/yellow-fg}{/bold}     ${userObj.email || 'N/A'}`,
+      `{bold}{yellow-fg}Website:{/yellow-fg}{/bold}   ${userObj.blog || 'N/A'}`,
+      `{bold}{yellow-fg}Twitter/X:{/yellow-fg} @${userObj.twitter_username || 'N/A'}`,
+      `{bold}{yellow-fg}Hireable:{/yellow-fg}  ${userObj.hireable ? '{green-fg}Yes ✓{/green-fg}' : 'No'}`,
+      `{bold}{yellow-fg}Profile:{/yellow-fg}{/bold}    {cyan-fg}${userObj.html_url}{/cyan-fg}`,
+      '',
+      `{bold}{yellow-fg}Bio:{/yellow-fg}{/bold}`,
+      `  "${userObj.bio || 'No bio provided'}"`,
+      '',
+      `{bold}{yellow-fg}Organizations:{/yellow-fg}{/bold}`,
+      `  ${orgsStr}`,
+      '',
+      `{bold}{yellow-fg}Account API Metrics:{/yellow-fg}{/bold}`,
+      `  • {green-fg}Public Repositories:{/green-fg} ${userObj.public_repos}`,
+      `  • {green-fg}Public Gists:{/green-fg}        ${userObj.public_gists || 0}`,
+      `  • {green-fg}Followers:{/green-fg}           ${userObj.followers}`,
+      `  • {green-fg}Following:{/green-fg}           ${userObj.following}`,
+      `  • {green-fg}Account Created:{/green-fg}     ${(userObj.created_at || '').slice(0, 10)}`,
+      '',
+      ' {gray-fg}(Press y or Ctrl+C to copy profile URL to clipboard){/gray-fg}'
+    ].join('\n');
+
+    this.profileDetailsBox.setContent(profileContent);
+
+    try {
+      const repos = await this.app.ghService.getUserRepos();
+      this.userRepos = repos;
+      const listW = this.getReposListWidth();
+      const VIS_W = 9;
+      const LANG_W = 14;
+      const STARS_W = 9;
+      const nameBudget = Math.max(6, listW - VIS_W - LANG_W - STARS_W - 3);
+      const items = repos.map(r => {
+        const vis = this.padCell(
+          r.isPrivate ? '{magenta-fg}[Prv]{/magenta-fg}' : '{green-fg}[Pub]{/green-fg}',
+          VIS_W
+        );
+        const langName = (r.primaryLanguage && r.primaryLanguage.name) || '—';
+        const lang = this.padCell(`{yellow-fg}[${this.fitListText(langName, LANG_W - 2)}]{/yellow-fg}`, LANG_W);
+        const name = this.padCell(`{bold}${this.fitListText(r.nameWithOwner, nameBudget)}{/bold}`, nameBudget);
+        const stars = this.padCell(`{yellow-fg}${this.fitListText(`* ${r.stargazerCount || 0}`, STARS_W)}{/yellow-fg}`, STARS_W, 'right');
+        return this.padListRow(`${vis} ${lang} ${name}${stars}`, listW);
+      });
+      this.userReposList.setItems(items.length ? items : ['{gray-fg}No personal repositories found{/gray-fg}']);
+    } catch {
+      this.userReposList.setItems(['{red-fg}Failed to fetch user repositories via GitHub API{/red-fg}']);
+    }
+
     this.screen.render();
   }
 
