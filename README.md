@@ -1,11 +1,21 @@
 # 🐙 GitHub Desktop TUI (`gd` / `gitu`)
 
-> **A modern, feature-packed, ultra-fast 8-Tab Terminal User Interface for Git & GitHub CLI.** Inspired by GitHub Desktop, crafted with Node.js, Blessed, and 24-bit TrueColor ANSI rendering.
+> **A modern, feature-packed, ultra-fast 9-Tab Terminal User Interface for Git & GitHub CLI.** Inspired by GitHub Desktop, crafted with Node.js, Blessed, and 24-bit TrueColor ANSI rendering.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/Node.js-18%2B-brightgreen.svg)](https://nodejs.org/)
 [![Creator](https://img.shields.io/badge/Creator-j0rd1s3rr4n0-magenta.svg)](https://github.com/j0rd1s3rr4n0)
 [![Languages](https://img.shields.io/badge/Languages-10%20Supported-blue.svg)](#-10-language-internationalization-f3)
+
+---
+
+## 🖼️ Screenshots
+
+![GitHub Desktop TUI Screenshot 1](images/screenshot-1.png)
+
+![GitHub Desktop TUI Screenshot 2](images/screenshot-2.png)
+
+> The installer also registers **GitHub Desktop TUI** in your application menu (with the app icon in `images/icon.png`) so you can launch it from your desktop environment or from `/opt`/`~/.local/bin`.
 
 ---
 
@@ -83,7 +93,7 @@ chmod +x autoinstall.sh
 
 ### 🌟 Key Highlights
 
-* **8 Dedicated Navigation Tabs (`1-8` or Mouse Click)**:
+* **9 Dedicated Navigation Tabs (`1-9` or Mouse Click)**:
   1. `[1] Changes`: Interactive staging checklist, strict **1-line / 10-line diff scroll**, single-read textbox guards (eliminating double-typing bugs), `Tab`/`Shift+Tab` field navigation, and draft text preservation.
   2. `[2] History`: Full commit log timeline with interactive patch details.
   3. `[3] Branches`: Local & remote branch checkout, new branch creation modal, 1-key Push (`P`) & Pull (`p`).
@@ -92,6 +102,7 @@ chmod +x autoinstall.sh
   6. `[6] Repositories`: Unified local & cloned repo manager with a **multi-threaded low-resource background system scanner (`s`)** that inspects disk from `/` for `.git` repositories (<10% CPU, <20MB RAM).
   7. `[7] About`: Live real-time GitHub profile auto-upgrade for developer `@j0rd1s3rr4n0`, featuring a **High-Res 24-bit TrueColor Lanczos ANSI Avatar (`32x32` / `63-column` ratio)** and real-time i18n switcher.
   8. `[8] My Account`: Authenticated user profile, live avatar, real-time commit counter, **line insertions (`+`)**, **line deletions (`-`)**, net code contributed, push/pull counters, and **1-click personal repository clone**.
+  9. `[9] Settings`: Remote integration (GitHub / GitLab / custom URL), live language switcher, and account / authentication panel.
 
 * **📖 Interpreted Markdown README Viewer (`m` / `Ctrl+M`)**:
   - Automatically parses and renders `README.md` files directly in your terminal with colored headers, syntax-highlighted code blocks, bullet points, and links.
@@ -111,7 +122,7 @@ chmod +x autoinstall.sh
 
 | Shortcut | Description |
 | :--- | :--- |
-| `1` - `8` | Switch directly between Tabs 1 to 8 |
+| `1` - `9` | Switch directly between Tabs 1 to 9 |
 | `Ctrl + Left` / `Ctrl + Right` | Cycle sequentially through tabs |
 | `Tab` / `Shift + Tab` | Move focus between inputs, buttons, and lists |
 | `Esc` / `q` | Close active modal window without quitting app |

@@ -260,7 +260,7 @@ export class App {
       new ReposView(this.screen, this, viewOptions),
       new AboutView(this.screen, this, viewOptions),
       new AccountView(this.screen, this, viewOptions),
-      new SettingsView(this.screen, this.ghService, viewOptions)
+      new SettingsView(this.screen, this, viewOptions)
     ];
 
     // Give GithubView access to gitService for remote origin checks

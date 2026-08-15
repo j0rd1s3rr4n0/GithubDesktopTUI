@@ -247,6 +247,43 @@ else
     echo -e "${GREEN}✓ Created fallback symlinks in $HOME/.local/bin/ (gd, gitu, ghtui)${NC}"
 fi
 
+# 5. Desktop Entry & App Icon (GUI menu / /opt launch)
+echo -e "${MAGENTA}${BOLD}🖼️  Step 5: Installing App Icon & Desktop Entry...${NC}"
+
+ICON_SRC="$SCRIPT_DIR/images/icon.png"
+DESKTOP_FILE="$HOME/.local/share/applications/git-desktop-tui.desktop"
+
+if [ -f "$ICON_SRC" ]; then
+    ICON_DEST="$HOME/.local/share/icons/hicolor/256x256/apps/git-desktop-tui.png"
+    mkdir -p "$(dirname "$ICON_DEST")" "$(dirname "$DESKTOP_FILE")"
+
+    if cp "$ICON_SRC" "$ICON_DEST" 2>/dev/null; then
+        echo -e "${GREEN}✓ App icon installed to ${CYAN}$ICON_DEST${NC}"
+    else
+        ICON_DEST="$SCRIPT_DIR/images/icon.png"
+        echo -e "${YELLOW}⚠️  Could not copy icon system-wide; using repo icon path.${NC}"
+    fi
+
+    BIN_PATH="$(command -v gd || command -v gitu || echo "$SCRIPT_DIR/bin/gitu.js")"
+
+    cat > "$DESKTOP_FILE" <<EOF
+[Desktop Entry]
+Type=Application
+Name=GitHub Desktop TUI
+Comment=Modern Git & GitHub terminal UI
+Exec=$BIN_PATH
+Icon=$ICON_DEST
+Terminal=true
+Categories=Development;Git;Utility;
+Keywords=git;github;cli;tui;
+EOF
+
+    chmod +x "$DESKTOP_FILE" 2>/dev/null || true
+    echo -e "${GREEN}✓ Desktop entry created: ${CYAN}$DESKTOP_FILE${NC}"
+else
+    echo -e "${YELLOW}⚠️  App icon not found ($ICON_SRC); skipping desktop entry.${NC}"
+fi
+
 # Final Success Message
 echo ""
 echo -e "${GREEN}${BOLD}======================================================================${NC}"
@@ -258,6 +295,10 @@ echo -e "  Type ${CYAN}${BOLD}gd${NC} or ${CYAN}${BOLD}ghtui${NC} in any termina
 echo ""
 echo -e "     ${GREEN}${BOLD}gd${NC}     ${YELLOW}(short alias)${NC}"
 echo -e "     ${GREEN}${BOLD}ghtui${NC}  ${YELLOW}(full name)${NC}"
+echo ""
+echo -e "${BOLD}🖥️  Desktop Menu:${NC}"
+echo -e "  Look for ${GREEN}${BOLD}GitHub Desktop TUI${NC} in your application menu"
+echo -e "  (or run ${CYAN}${BOLD}gio launch git-desktop-tui.desktop${NC})."
 echo ""
 echo -e "${YELLOW}Enjoying GitHub Desktop TUI? Star the repo on GitHub!${NC}"
 echo -e "👉 ${CYAN}${BOLD}${REPO_URL}${NC}"
