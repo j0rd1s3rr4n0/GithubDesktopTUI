@@ -11,7 +11,7 @@
 
 ## 🖼️ Screenshots
 
-![GitHub Desktop TUI Screenshot 1](images/screenshot-1.png)
+<!--- ![GitHub Desktop TUI Screenshot 1](images/screenshot-1.png) --->
 
 ![GitHub Desktop TUI Screenshot 2](images/screenshot-2.png)
 
