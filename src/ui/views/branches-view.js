@@ -83,11 +83,11 @@ export class BranchesView {
     });
 
     this.localList.key(['S-p'], () => {
-      this.screen.emit('execute-push');
+      this.screen.emit('execute-push', { force: true });
     });
 
     this.localList.key(['p'], () => {
-      this.screen.emit('execute-pull');
+      this.screen.emit('execute-pull', { force: false });
     });
   }
 

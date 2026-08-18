@@ -1,0 +1,6 @@
+# Ensure shell scripts keep LF line endings across platforms
+autoinstall.sh text eol=lf
+*.sh text eol=lf
+
+# Optional: treat text files normally, let Git handle others
+* text=auto

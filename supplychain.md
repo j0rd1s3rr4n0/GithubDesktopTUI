@@ -2,8 +2,8 @@
 
 > **File:** `supplychain.md`
 > **Applies to:** `git-desktop-tui` v1.0.0
-> **Generated:** 2026-08-14
-> **Node.js:** v22.23.2 (engine requirement: `>=18`) — **npm:** 10.9.8
+> **Generated:** 2026-08-18
+> **Node.js (observed):** v26.5.0 (engine requirement: `>=18`) — **npm (observed):** 11.17.0
 
 This document is the **single source of truth** for the software supply chain of
 this project. It enumerates every package, dependency, and pinned version, states
@@ -49,16 +49,16 @@ the following attack classes:
 
 | Component | Version | Value |
 |---|---|---|
-| Node.js | v22.23.2 | Runtime (`engines.node >= 18`) |
-| npm | 10.9.8 | Package manager (`lockfileVersion: 3`) |
+| Node.js | v26.5.0 (observed) | Runtime (`engines.node >= 18`) |
+| npm | 11.17.0 (observed) | Package manager (`lockfileVersion: 3`) |
 | Registry | `https://registry.npmjs.org/` | Pinned in `.npmrc` |
 | Lockfile | `package-lock.json` | Source of truth for exact tree |
 
 **Lockfile fingerprint (SHA-256):**
 
 ```
-d6ec29b3a1639f06a740ce7a780a260381be84456b73654489126ce01721055d  package-lock.json
-adce29d5ef9c246f02b52fae3fe12ef18befb6814f2a17cacbc0694b58997cb6  supplychain-manifest.json
+073636071faa3c413f16b28fa6e58f5583366db0521d39049f40ed81c65d7a7c  package-lock.json
+ec6a3dcc3bf1930860737ec974f759ec9b5534e3bdbf9b13a1be1206b699a8f9  supplychain-manifest.json
 ```
 
 ---
@@ -239,7 +239,30 @@ repo (it is technically modifiable by a repo compromise):
 
 ---
 
-## 12. References
+## 12. Windows / WSL installer notes
+
+If installing on Windows or via WSL, shell scripts may be corrupted by CRLF line endings which cause errors like `command not found` or `syntax error near unexpected token`. If you see those, convert the installer to use LF line endings before running:
+
+```bash
+# Convert in-place (recommended):
+dos2unix autoinstall.sh
+
+# Or using sed (POSIX):
+sed -i 's/\r$//' autoinstall.sh
+
+# Then run from WSL / a POSIX shell:
+chmod +x autoinstall.sh
+sudo ./autoinstall.sh
+```
+
+Notes:
+- Prefer running the installer inside WSL (Ubuntu) rather than Windows PowerShell/CMD.  Using `sudo bash autoinstall.sh` from a Windows shell often exposes CRLF and permission issues.
+- The repo includes a `.gitattributes` entry forcing LF for `*.sh` to avoid this problem when checked out on Windows.
+- If you still encounter permission or npm EACCES errors, clone the repo into your home directory and run the installer there (or use `sudo` as needed). See the Troubleshooting section in the README for more environment-specific advice.
+
+---
+
+## 13. References
 
 - `package.json` — declared dependencies
 - `package-lock.json` — canonical resolved tree (lockfile v3)

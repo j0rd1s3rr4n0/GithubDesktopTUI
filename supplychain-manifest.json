@@ -1,63 +1,20 @@
 {
   "tool": "git-desktop-tui supply chain manifest",
-  "node": "v22.23.2",
-  "npm": "10.9.8",
-  "generatedAt": "2026-08-14T17:24:14.350Z",
+  "node": "v26.5.0",
+  "npm": "11.17.0",
+  "generatedAt": "2026-08-18T10:58:52.418Z",
   "lockfileVersion": 3,
-  "lockfileSha256": "d6ec29b3a1639f06a740ce7a780a260381be84456b73654489126ce01721055d",
+  "lockfileSha256": "aff8c4884f407a561e8ad4189a0c1b2bb93591c30ceef57d0e052dda8e053832",
   "rootDependencies": {
-    "blessed": "^0.1.81",
-    "simple-git": "^3.27.0"
+    "blessed": "0.1.81"
   },
-  "packageCount": 8,
+  "packageCount": 1,
   "packages": [
-    {
-      "name": "@kwsites/file-exists",
-      "version": "1.1.1",
-      "resolved": "https://registry.npmjs.org/@kwsites/file-exists/-/file-exists-1.1.1.tgz",
-      "integrity": "sha512-m9/5YGR18lIwxSFDwfE3oA7bWuq9kdau6ugN4H2rJeyhFQZcG9AgSHkQtSD15a8WvTgfz9aikZMrKPHvbpqFiw=="
-    },
-    {
-      "name": "@kwsites/promise-deferred",
-      "version": "1.1.1",
-      "resolved": "https://registry.npmjs.org/@kwsites/promise-deferred/-/promise-deferred-1.1.1.tgz",
-      "integrity": "sha512-GaHYm+c0O9MjZRu0ongGBRbinu8gVAMd2UZjji6jVmqKtZluZnptXGWhz1E8j8D2HJ3f/yMxKAUC0b+57wncIw=="
-    },
-    {
-      "name": "@simple-git/args-pathspec",
-      "version": "1.0.3",
-      "resolved": "https://registry.npmjs.org/@simple-git/args-pathspec/-/args-pathspec-1.0.3.tgz",
-      "integrity": "sha512-ngJMaHlsWDTfjyq9F3VIQ8b7NXbBLq5j9i5bJ6XLYtD6qlDXT7fdKY2KscWWUF8t18xx052Y/PUO1K1TRc9yKA=="
-    },
-    {
-      "name": "@simple-git/argv-parser",
-      "version": "1.1.1",
-      "resolved": "https://registry.npmjs.org/@simple-git/argv-parser/-/argv-parser-1.1.1.tgz",
-      "integrity": "sha512-Q9lBcfQ+VQCpQqGJFHe5yooOS5hGdLFFbJ5R+R5aDsnkPCahtn1hSkMcORX65J2Z5lxSkD0lQorMsncuBQxYUw=="
-    },
     {
       "name": "blessed",
       "version": "0.1.81",
       "resolved": "https://registry.npmjs.org/blessed/-/blessed-0.1.81.tgz",
       "integrity": "sha512-LoF5gae+hlmfORcG1M5+5XZi4LBmvlXTzwJWzUlPryN/SJdSflZvROM2TwkT0GMpq7oqT48NRd4GS7BiVBc5OQ=="
-    },
-    {
-      "name": "debug",
-      "version": "4.4.3",
-      "resolved": "https://registry.npmjs.org/debug/-/debug-4.4.3.tgz",
-      "integrity": "sha512-RGwwWnwQvkVfavKVt22FGLw+xYSdzARwm0ru6DhTVA3umU5hZc28V3kO4stgYryrTlLpuvgI9GiijltAjNbcqA=="
-    },
-    {
-      "name": "ms",
-      "version": "2.1.3",
-      "resolved": "https://registry.npmjs.org/ms/-/ms-2.1.3.tgz",
-      "integrity": "sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA=="
-    },
-    {
-      "name": "simple-git",
-      "version": "3.36.0",
-      "resolved": "https://registry.npmjs.org/simple-git/-/simple-git-3.36.0.tgz",
-      "integrity": "sha512-cGQjLjK8bxJw4QuYT7gxHw3/IouVESbhahSsHrX97MzCL1gu2u7oy38W6L2ZIGECEfIBG4BabsWDPjBxJENv9Q=="
     }
   ]
 }

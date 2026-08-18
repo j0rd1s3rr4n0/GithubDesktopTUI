@@ -15,10 +15,13 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import crypto from 'node:crypto';
 import { execSync } from 'node:child_process';
 
-const ROOT = path.resolve(new URL('..', import.meta.url).pathname);
+// Resolve repository root in a cross-platform way
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const ROOT = path.resolve(__dirname, '..');
 const LOCK_PATH = path.join(ROOT, 'package-lock.json');
 const PKG_PATH = path.join(ROOT, 'package.json');
 const MANIFEST_PATH = path.join(ROOT, 'supplychain-manifest.json');
@@ -40,8 +43,28 @@ function readJson(p) {
 }
 
 function buildManifest() {
-  const lockBuf = fs.readFileSync(LOCK_PATH);
-  const lock = readJson(LOCK_PATH);
+  let lockBuf;
+  let lock;
+
+  // In CI we prefer using the committed package-lock.json (HEAD) because
+  // 'npm ci' on the runner can sometimes rewrite the on-disk lockfile
+  // (different npm/node versions, metadata), producing spurious diffs.
+  // Use git show HEAD:package-lock.json when available (CI or env var).
+  if (process.env.CI) {
+    try {
+      const out = execSync('git show HEAD:package-lock.json', { encoding: 'utf8' });
+      lockBuf = Buffer.from(out, 'utf8');
+      lock = JSON.parse(out);
+    } catch (err) {
+      // Fallback to on-disk file if git fails
+      lockBuf = fs.readFileSync(LOCK_PATH);
+      lock = readJson(LOCK_PATH);
+    }
+  } else {
+    lockBuf = fs.readFileSync(LOCK_PATH);
+    lock = readJson(LOCK_PATH);
+  }
+
   const pkg = readJson(PKG_PATH);
 
   const packages = Object.entries(lock.packages)

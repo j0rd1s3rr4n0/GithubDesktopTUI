@@ -289,11 +289,11 @@ export class ChangesView {
     this.summaryInput.key(['enter'], commitOnEnter);
     this.descInput.key(['enter'], commitOnEnter);
 
-    this.fileList.key(['x'], () => {
+    this.fileList.key(['x', 'm'], () => {
       this.toggleMarkSelected();
     });
 
-    this.fileList.key(['S-u'], () => {
+    this.fileList.key(['S-u', 'D'], () => {
       this.requestUndoMarked();
     });
 

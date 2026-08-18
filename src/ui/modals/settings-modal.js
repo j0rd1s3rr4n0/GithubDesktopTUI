@@ -190,6 +190,22 @@ export class SettingsModal {
       }
     });
 
+    // Button to open update modal from settings
+    this.updateAppBtn = blessed.button({
+      parent: this.box,
+      top: 13,
+      left: 28,
+      width: 18,
+      height: 1,
+      content: ' [u] Check / Update App ',
+      align: 'center',
+      style: {
+        bg: 'blue',
+        fg: 'white',
+        focus: { bg: 'yellow', fg: 'black' }
+      }
+    });
+
     this.setupEvents();
   }
 
@@ -199,6 +215,9 @@ export class SettingsModal {
 
     this.applyCustomBtn.on('press', () => this.applyCustomRemote());
     this.box.key(['a'], () => this.applyCustomRemote());
+
+    this.updateAppBtn.on('press', () => this.screen.emit('open-update-modal'));
+    this.box.key(['u'], () => this.screen.emit('open-update-modal'));
 
     this.closeBtn.on('press', () => this.hide());
     this.box.key(['escape', 'q'], () => this.hide());

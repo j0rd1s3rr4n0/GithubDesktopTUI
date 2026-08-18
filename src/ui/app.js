@@ -693,7 +693,16 @@ export class App {
     });
 
     this.screen.key(['S-p'], async () => {
-      await this.executePush();
+      if (!this.hasOpenModal()) {
+        await this.executePush(true);
+      }
+    });
+
+    // Force pull (hard reset to remote)
+    this.screen.key(['S-o'], async () => {
+      if (!this.hasOpenModal() && this.activeTab !== 0 && this.activeTab !== 3 && this.activeTab !== 5) {
+        await this.executePull(true);
+      }
     });
 
     this.screen.key(['p'], async () => {
@@ -750,9 +759,13 @@ export class App {
     this.screen.on('open-readme-content', (rawText, title) => {
       this.readmeModal.showContent(rawText, title);
     });
-    this.screen.on('execute-push', () => this.executePush());
-    this.screen.on('execute-pull', () => this.executePull());
+    // execute-push / execute-pull accept optional { force: boolean }
+    this.screen.on('execute-push', (opts) => { this.executePush(Boolean(opts && opts.force)); });
+    this.screen.on('execute-pull', (opts) => { this.executePull(Boolean(opts && opts.force)); });
     this.screen.on('open-create-repo-modal', () => this.openCreateRepoModal());
+    this.screen.on('open-update-modal', () => {
+      if (this.updateModal) this.updateModal.show();
+    });
 
     this.screen.on('resize', () => {
       this.updateI18nLabels();
@@ -789,7 +802,25 @@ export class App {
     this.createRepoModal.prompt();
   }
 
-  async executePush() {
+  async executePush(force = false) {
+    // If force requested, ask for explicit confirmation first
+    if (force) {
+      const question =
+        `{bold}{red-fg}Force push to remote origin?{/red-fg}{/bold}\n\n` +
+        `This will overwrite remote branch references and may affect other collaborators. It uses --force-with-lease for safer pushing.\n\n` +
+        `{yellow-fg}Proceed with force push?{/yellow-fg}`;
+      this.confirmModal.ask(question, async () => {
+        await this._performPush(true);
+      }, () => {
+        this.notify('Force push cancelled');
+      });
+      return;
+    }
+
+    await this._performPush(false);
+  }
+
+  async _performPush(force = false) {
     const hasRemote = await this.gitService.hasRemoteOrigin();
     if (!hasRemote) {
       const auth = await this.ghService.getAuthStatus();
@@ -804,10 +835,10 @@ export class App {
       return;
     }
 
-    this.notify('Pushing commits to remote origin...');
+    this.notify(force ? 'Force pushing commits to remote origin...' : 'Pushing commits to remote origin...');
     RepoStore.recordPush();
     try {
-      await this.gitService.push();
+      await this.gitService.push(force);
       this.notify('✓ Push completed successfully');
       await this.refreshGlobalHeader();
       this.views[this.activeTab].refresh();
@@ -816,7 +847,25 @@ export class App {
     }
   }
 
-  async executePull() {
+  async executePull(force = false) {
+    // If force requested, ask for explicit confirmation first
+    if (force) {
+      const question =
+        `{bold}{red-fg}Force pull and reset local branch to remote?{/red-fg}{/bold}\n\n` +
+        `This will discard local commits and uncommitted changes on the current branch by running a hard reset to origin/<branch>.\n\n` +
+        `{yellow-fg}Proceed with force pull?{/yellow-fg}`;
+      this.confirmModal.ask(question, async () => {
+        await this._performPull(true);
+      }, () => {
+        this.notify('Force pull cancelled');
+      });
+      return;
+    }
+
+    await this._performPull(false);
+  }
+
+  async _performPull(force = false) {
     const hasRemote = await this.gitService.hasRemoteOrigin();
     if (!hasRemote) {
       const auth = await this.ghService.getAuthStatus();
@@ -831,10 +880,10 @@ export class App {
       return;
     }
 
-    this.notify('Pulling updates from remote origin...');
+    this.notify(force ? 'Force pulling updates from remote origin...' : 'Pulling updates from remote origin...');
     RepoStore.recordPull();
     try {
-      await this.gitService.pull();
+      await this.gitService.pull(force);
       this.notify('✓ Pull completed successfully');
       await this.refreshGlobalHeader();
       this.views[this.activeTab].refresh();
