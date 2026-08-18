@@ -1,10 +1,10 @@
 {
   "tool": "git-desktop-tui supply chain manifest",
-  "node": "v22.23.2",
-  "npm": "10.9.8",
-  "generatedAt": "2026-08-14T17:24:14.350Z",
+  "node": "v26.5.0",
+  "npm": "11.17.0",
+  "generatedAt": "2026-08-18T02:40:22.055Z",
   "lockfileVersion": 3,
-  "lockfileSha256": "d6ec29b3a1639f06a740ce7a780a260381be84456b73654489126ce01721055d",
+  "lockfileSha256": "073636071faa3c413f16b28fa6e58f5583366db0521d39049f40ed81c65d7a7c",
   "rootDependencies": {
     "blessed": "^0.1.81",
     "simple-git": "^3.27.0"

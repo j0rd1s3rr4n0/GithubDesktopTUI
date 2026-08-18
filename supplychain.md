@@ -2,8 +2,8 @@
 
 > **File:** `supplychain.md`
 > **Applies to:** `git-desktop-tui` v1.0.0
-> **Generated:** 2026-08-14
-> **Node.js:** v22.23.2 (engine requirement: `>=18`) — **npm:** 10.9.8
+> **Generated:** 2026-08-18
+> **Node.js (observed):** v26.5.0 (engine requirement: `>=18`) — **npm (observed):** 11.17.0
 
 This document is the **single source of truth** for the software supply chain of
 this project. It enumerates every package, dependency, and pinned version, states
@@ -49,16 +49,16 @@ the following attack classes:
 
 | Component | Version | Value |
 |---|---|---|
-| Node.js | v22.23.2 | Runtime (`engines.node >= 18`) |
-| npm | 10.9.8 | Package manager (`lockfileVersion: 3`) |
+| Node.js | v26.5.0 (observed) | Runtime (`engines.node >= 18`) |
+| npm | 11.17.0 (observed) | Package manager (`lockfileVersion: 3`) |
 | Registry | `https://registry.npmjs.org/` | Pinned in `.npmrc` |
 | Lockfile | `package-lock.json` | Source of truth for exact tree |
 
 **Lockfile fingerprint (SHA-256):**
 
 ```
-d6ec29b3a1639f06a740ce7a780a260381be84456b73654489126ce01721055d  package-lock.json
-adce29d5ef9c246f02b52fae3fe12ef18befb6814f2a17cacbc0694b58997cb6  supplychain-manifest.json
+073636071faa3c413f16b28fa6e58f5583366db0521d39049f40ed81c65d7a7c  package-lock.json
+ec6a3dcc3bf1930860737ec974f759ec9b5534e3bdbf9b13a1be1206b699a8f9  supplychain-manifest.json
 ```
 
 ---

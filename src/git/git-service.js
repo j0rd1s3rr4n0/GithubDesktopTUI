@@ -321,6 +321,11 @@ export class GitService {
     await this.git.checkout(branchName);
   }
 
+  // Backwards-compatible alias used by UI code (BranchesView expects gitService.checkout)
+  async checkout(branchName) {
+    return this.checkoutBranch(branchName);
+  }
+
   async createBranch(branchName, checkout = true) {
     if (checkout) {
       await this.git.checkoutLocalBranch(branchName);
@@ -368,12 +373,33 @@ export class GitService {
     await this.git.stash(['drop', `stash@{${index}}`]);
   }
 
-  async push() {
-    return await this.git.push();
+  async push(force = false) {
+    try {
+      if (force) {
+        // Use force-with-lease for safer forced pushes
+        return await this.git.push(['--force-with-lease']);
+      }
+      return await this.git.push();
+    } catch (err) {
+      throw err;
+    }
   }
 
-  async pull() {
-    return await this.git.pull();
+  async pull(force = false) {
+    try {
+      if (!force) {
+        return await this.git.pull();
+      }
+
+      // Force pull: fetch and hard-reset the current branch to origin/<branch>
+      const status = await this.git.status();
+      const branch = status.current || 'HEAD';
+      await this.git.fetch();
+      await this.git.reset(['--hard', `origin/${branch}`]);
+      return;
+    } catch (err) {
+      throw err;
+    }
   }
 
   async fetch() {

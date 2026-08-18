@@ -54,6 +54,15 @@ export class InitModal {
       }
     });
 
+    // Option: perform add . and an initial commit after init
+    this.initCommitCheckbox = blessed.checkbox({
+      parent: this.box,
+      top: 8,
+      left: 3,
+      text: ' Add all files and create initial commit after init',
+      checked: false
+    });
+
     this.browseBtn = blessed.button({
       parent: this.box,
       top: 5,
@@ -171,6 +180,17 @@ export class InitModal {
     this.doInit = async () => {
       if (!this.box.visible) return;
       await this.gitService.initRepo();
+
+      // Optionally add all and create an initial commit
+      if (this.initCommitCheckbox && this.initCommitCheckbox.checked) {
+        try {
+          await this.gitService.stageAll();
+          await this.gitService.commit('Initial commit');
+        } catch (err) {
+          this.screen.emit('show-error', 'Initial commit failed', err);
+        }
+      }
+
       this.hide();
       if (this.onDone) this.onDone('initialized');
     };

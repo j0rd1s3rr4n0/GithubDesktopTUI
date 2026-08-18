@@ -15,10 +15,13 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import crypto from 'node:crypto';
 import { execSync } from 'node:child_process';
 
-const ROOT = path.resolve(new URL('..', import.meta.url).pathname);
+// Resolve repository root in a cross-platform way
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const ROOT = path.resolve(__dirname, '..');
 const LOCK_PATH = path.join(ROOT, 'package-lock.json');
 const PKG_PATH = path.join(ROOT, 'package.json');
 const MANIFEST_PATH = path.join(ROOT, 'supplychain-manifest.json');
