@@ -89,6 +89,24 @@ export class BranchesView {
     this.localList.key(['p'], () => {
       this.screen.emit('execute-pull', { force: false });
     });
+
+    // Merge selected branch into current
+    this.localList.key(['m'], async () => {
+      const idx = this.localList.selected;
+      if (this.localBranches[idx]) {
+        const name = this.localBranches[idx].name;
+        this.screen.emit('merge-branch', { branch: name });
+      }
+    });
+
+    // Delete selected branch (prompted)
+    this.localList.key(['d'], async () => {
+      const idx = this.localList.selected;
+      if (this.localBranches[idx]) {
+        const name = this.localBranches[idx].name;
+        this.screen.emit('delete-branch', { branch: name });
+      }
+    });
   }
 
   async checkoutBranch(branchName) {

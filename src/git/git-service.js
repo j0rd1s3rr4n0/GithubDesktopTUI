@@ -267,6 +267,13 @@ export class GitService {
     if (r.status !== 0) throw new Error(r.stderr || 'git branch delete failed');
   }
 
+  async deleteRemoteBranch(branchName) {
+    // Attempt to delete branch on remote 'origin'
+    const r = runGit(this.repoPath, ['push', 'origin', '--delete', branchName]);
+    if (r.status !== 0) throw new Error(r.stderr || 'git push --delete failed');
+    return r.stdout;
+  }
+
   async mergeBranch(branchName, options = {}) {
     // options: { noFF: true }
     const args = ['merge'];

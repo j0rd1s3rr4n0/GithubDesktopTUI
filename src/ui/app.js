@@ -762,6 +762,96 @@ export class App {
     // execute-push / execute-pull accept optional { force: boolean }
     this.screen.on('execute-push', (opts) => { this.executePush(Boolean(opts && opts.force)); });
     this.screen.on('execute-pull', (opts) => { this.executePull(Boolean(opts && opts.force)); });
+
+    // Merge branch (emitted by branches view)
+    this.screen.on('merge-branch', (opts) => {
+      const branch = opts && opts.branch;
+      if (!branch) return;
+      (async () => {
+        try {
+          const status = await this.gitService.getStatus();
+          const current = status.currentBranch || 'HEAD';
+          if (branch === current) {
+            this.notify('Cannot merge a branch into itself');
+            return;
+          }
+          const question = `Merge branch "{bold}${branch}{/bold}" into current branch "{bold}${current}{/bold}"?`;
+          this.confirmModal.ask(question, async () => {
+            try {
+              await this.gitService.mergeBranch(branch, { noFF: true });
+              this.notify(`✓ Merged ${branch} into ${current}`);
+              await this.refreshGlobalHeader();
+              if (this.views[this.activeTab] && typeof this.views[this.activeTab].refresh === 'function') this.views[this.activeTab].refresh();
+
+              // After successful merge, offer to delete the merged branch
+              const delQ = `Delete local branch "${branch}"?`;
+              this.confirmModal.ask(delQ, async () => {
+                try {
+                  await this.gitService.deleteBranch(branch);
+                  this.notify(`Deleted branch ${branch}`);
+                  // Try to delete remote branch too (best-effort)
+                  try {
+                    await this.gitService.deleteRemoteBranch(branch);
+                    this.notify(`Deleted remote branch origin/${branch}`);
+                  } catch (err) {
+                    // Non-fatal: remote deletion may not exist or fail due to permissions
+                  }
+                  await this.refreshGlobalHeader();
+                  if (this.views[this.activeTab] && typeof this.views[this.activeTab].refresh === 'function') this.views[this.activeTab].refresh();
+                } catch (err) {
+                  this.errorModal.showError('Delete Branch Failed', err);
+                }
+              }, () => {});
+            } catch (err) {
+              this.errorModal.showError('Merge Failed', err);
+            }
+          }, () => {});
+        } catch (err) {
+          this.errorModal.showError('Merge Flow Failed', err);
+        }
+      })();
+    });
+
+    // Delete branch directly (emitted by branches view)
+    this.screen.on('delete-branch', (opts) => {
+      const branch = opts && opts.branch;
+      if (!branch) return;
+      (async () => {
+        try {
+          const status = await this.gitService.getStatus();
+          const current = status.currentBranch || 'HEAD';
+          if (branch === current) {
+            this.notify('Cannot delete the currently checked-out branch');
+            return;
+          }
+          const question = `Delete local branch "{bold}${branch}{/bold}"?`;
+          this.confirmModal.ask(question, async () => {
+            try {
+              await this.gitService.deleteBranch(branch);
+              this.notify(`Deleted branch ${branch}`);
+              // Ask about remote deletion
+              const delRemoteQ = `Also delete remote branch origin/${branch}?`;
+              this.confirmModal.ask(delRemoteQ, async () => {
+                try {
+                  await this.gitService.deleteRemoteBranch(branch);
+                  this.notify(`Deleted remote branch origin/${branch}`);
+                } catch (err) {
+                  this.errorModal.showError('Remote Delete Failed', err);
+                }
+              }, () => {});
+
+              await this.refreshGlobalHeader();
+              if (this.views[this.activeTab] && typeof this.views[this.activeTab].refresh === 'function') this.views[this.activeTab].refresh();
+            } catch (err) {
+              this.errorModal.showError('Delete Branch Failed', err);
+            }
+          }, () => {});
+        } catch (err) {
+          this.errorModal.showError('Delete Flow Failed', err);
+        }
+      })();
+    });
+
     this.screen.on('open-create-repo-modal', () => this.openCreateRepoModal());
     this.screen.on('open-update-modal', () => {
       if (this.updateModal) this.updateModal.show();
