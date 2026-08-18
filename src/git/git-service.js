@@ -263,7 +263,21 @@ export class GitService {
 
   async deleteBranch(branchName, force = false) {
     const flag = force ? '-D' : '-d';
-    runGit(this.repoPath, ['branch', flag, branchName]);
+    const r = runGit(this.repoPath, ['branch', flag, branchName]);
+    if (r.status !== 0) throw new Error(r.stderr || 'git branch delete failed');
+  }
+
+  async mergeBranch(branchName, options = {}) {
+    // options: { noFF: true }
+    const args = ['merge'];
+    if (options.noFF) args.push('--no-ff');
+    args.push(branchName);
+    const r = runGit(this.repoPath, args);
+    if (r.status !== 0) {
+      // Return stderr for conflict details
+      throw new Error(r.stderr || 'git merge failed');
+    }
+    return r.stdout;
   }
 
   async getStashes() {
