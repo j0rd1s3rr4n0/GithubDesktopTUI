@@ -1,5 +1,9 @@
 name: Supply chain verification
 
+# Grant the workflow write access to repo contents so it can push manifest updates when intended
+permissions:
+  contents: write
+
 on:
   push:
     branches: [ master, main ]
