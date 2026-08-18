@@ -763,6 +763,9 @@ export class App {
     this.screen.on('execute-push', (opts) => { this.executePush(Boolean(opts && opts.force)); });
     this.screen.on('execute-pull', (opts) => { this.executePull(Boolean(opts && opts.force)); });
     this.screen.on('open-create-repo-modal', () => this.openCreateRepoModal());
+    this.screen.on('open-update-modal', () => {
+      if (this.updateModal) this.updateModal.show();
+    });
 
     this.screen.on('resize', () => {
       this.updateI18nLabels();
