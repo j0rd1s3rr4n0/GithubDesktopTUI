@@ -19,15 +19,15 @@
 ## 🖼️ Screenshots
 
 
- [!GitHub Desktop TUI Screenshot 1](screenshots/1.jpeg) 
- [!GitHub Desktop TUI Screenshot 2](screenshots/2.jpeg) 
- [!GitHub Desktop TUI Screenshot 3](screenshots/3.jpeg) 
- [!GitHub Desktop TUI Screenshot 4](screenshots/4.jpeg) 
- [!GitHub Desktop TUI Screenshot 5](screenshots/5.jpeg) 
- [!GitHub Desktop TUI Screenshot 6](screenshots/6.jpeg) 
- [!GitHub Desktop TUI Screenshot 7](screenshots/7.jpeg) 
- [!GitHub Desktop TUI Screenshot 8](screenshots/8.jpeg) 
- [!GitHub Desktop TUI Screenshot 9](screenshots/9.jpeg) 
+ ![GitHub Desktop TUI Screenshot 1](screenshots/1.jpeg) 
+ ![GitHub Desktop TUI Screenshot 2](screenshots/2.jpeg) 
+ ![GitHub Desktop TUI Screenshot 3](screenshots/3.jpeg) 
+ ![GitHub Desktop TUI Screenshot 4](screenshots/4.jpeg) 
+ ![GitHub Desktop TUI Screenshot 5](screenshots/5.jpeg) 
+ ![GitHub Desktop TUI Screenshot 6](screenshots/6.jpeg) 
+ ![GitHub Desktop TUI Screenshot 7](screenshots/7.jpeg) 
+ ![GitHub Desktop TUI Screenshot 8](screenshots/8.jpeg) 
+ ![GitHub Desktop TUI Screenshot 9](screenshots/9.jpeg) 
 
  <!-- --->
 
