@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+﻿#!/usr/bin/env bash
 # ==============================================================================
 # 🐙 GitHub Desktop TUI (gd / gitu) - Universal Universal Linux Auto-Installer
 # Created by Jordi Serrano (j0rd1s3rr4n0) - https://github.com/j0rd1s3rr4n0
@@ -303,4 +303,5 @@ echo ""
 echo -e "${YELLOW}Enjoying GitHub Desktop TUI? Star the repo on GitHub!${NC}"
 echo -e "👉 ${CYAN}${BOLD}${REPO_URL}${NC}"
 echo ""
+
 
