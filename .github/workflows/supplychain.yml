@@ -1,0 +1,30 @@
+name: Supply chain verification
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+
+jobs:
+  verify_supply_chain:
+    name: Verify supply chain manifest and audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify supplychain manifest
+        run: node scripts/verify-supply-chain.mjs verify
+
+      - name: Run audit (fail on high+)
+        run: npm run supplychain:audit
