@@ -239,7 +239,30 @@ repo (it is technically modifiable by a repo compromise):
 
 ---
 
-## 12. References
+## 12. Windows / WSL installer notes
+
+If installing on Windows or via WSL, shell scripts may be corrupted by CRLF line endings which cause errors like `command not found` or `syntax error near unexpected token`. If you see those, convert the installer to use LF line endings before running:
+
+```bash
+# Convert in-place (recommended):
+dos2unix autoinstall.sh
+
+# Or using sed (POSIX):
+sed -i 's/\r$//' autoinstall.sh
+
+# Then run from WSL / a POSIX shell:
+chmod +x autoinstall.sh
+sudo ./autoinstall.sh
+```
+
+Notes:
+- Prefer running the installer inside WSL (Ubuntu) rather than Windows PowerShell/CMD.  Using `sudo bash autoinstall.sh` from a Windows shell often exposes CRLF and permission issues.
+- The repo includes a `.gitattributes` entry forcing LF for `*.sh` to avoid this problem when checked out on Windows.
+- If you still encounter permission or npm EACCES errors, clone the repo into your home directory and run the installer there (or use `sudo` as needed). See the Troubleshooting section in the README for more environment-specific advice.
+
+---
+
+## 13. References
 
 - `package.json` — declared dependencies
 - `package-lock.json` — canonical resolved tree (lockfile v3)
