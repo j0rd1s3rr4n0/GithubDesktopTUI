@@ -30,7 +30,6 @@
   "author": "Jordi Serrano (j0rd1s3rr4n0)",
   "license": "MIT",
   "dependencies": {
-    "blessed": "^0.1.81",
-    "simple-git": "^3.27.0"
+  "blessed": "0.1.81"
   }
 }

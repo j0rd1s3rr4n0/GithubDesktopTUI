@@ -1,18 +1,25 @@
-import { simpleGit } from 'simple-git';
 import path from 'path';
 import fs from 'fs';
+import { spawnSync } from 'child_process';
+
+function runGit(cwd, args) {
+  const res = spawnSync('git', args, { cwd, encoding: 'utf8' });
+  return {
+    stdout: res.stdout || '',
+    stderr: res.stderr || '',
+    status: res.status
+  };
+}
 
 export class GitService {
   constructor(targetPath = process.cwd()) {
     this.repoPath = path.resolve(targetPath);
-    this.git = simpleGit(this.repoPath);
   }
 
   async isRepo() {
     try {
-      const isDirect = await this.git.checkIsRepo();
-      if (isDirect) return true;
-      return await this.findRepoRoot();
+      const r = runGit(this.repoPath, ['rev-parse', '--is-inside-work-tree']);
+      return r.status === 0 && (r.stdout || '').trim() === 'true';
     } catch {
       return false;
     }
@@ -20,10 +27,9 @@ export class GitService {
 
   async findRepoRoot() {
     try {
-      const topLevel = await this.git.revparse(['--show-toplevel']);
-      if (topLevel && topLevel.trim()) {
-        this.repoPath = topLevel.trim();
-        this.git = simpleGit(this.repoPath);
+      const r = runGit(this.repoPath, ['rev-parse', '--show-toplevel']);
+      if (r.status === 0 && r.stdout.trim()) {
+        this.repoPath = r.stdout.trim();
         return true;
       }
     } catch {}
@@ -31,378 +37,274 @@ export class GitService {
   }
 
   async initRepo() {
-    try {
-      await this.git.init();
-      return true;
-    } catch {
-      return false;
-    }
+    const r = runGit(this.repoPath, ['init']);
+    return r.status === 0;
   }
 
   async getRepoName() {
-    try {
-      const topLevel = await this.git.revparse(['--show-toplevel']);
-      return path.basename(topLevel.trim());
-    } catch {
-      return path.basename(this.repoPath);
-    }
+    const r = runGit(this.repoPath, ['rev-parse', '--show-toplevel']);
+    if (r.status === 0 && r.stdout.trim()) return path.basename(r.stdout.trim());
+    return path.basename(this.repoPath);
   }
 
   async hasRemoteOrigin() {
-    try {
-      const remotes = await this.git.getRemotes(true);
-      return remotes.some(r => r.name === 'origin');
-    } catch {
-      return false;
-    }
+    const r = runGit(this.repoPath, ['remote']);
+    if (r.status !== 0) return false;
+    return (r.stdout || '').split(/\s+/).includes('origin');
   }
 
   async getStatus() {
     try {
-      const status = await this.git.status();
+      const r = runGit(this.repoPath, ['status', '--porcelain', '--branch']);
+      if (r.status !== 0) throw new Error(r.stderr || 'git status failed');
+      const lines = (r.stdout || '').split('\n').filter(Boolean);
       const files = [];
+      let current = 'HEAD';
+      let ahead = 0;
+      let behind = 0;
+      let tracking = null;
 
-      for (const file of status.files) {
+      for (const line of lines) {
+        if (line.startsWith('##')) {
+          // branch line: ## branch... [ahead X, behind Y]
+          const branchLine = line.slice(2).trim();
+          const m = branchLine.match(/([^\s\.]+)(?:\.\.\.([^\s]+))?/);
+          if (m) {
+            current = m[1];
+            tracking = m[2] || null;
+          }
+          const a = branchLine.match(/ahead (\d+)/);
+          const b = branchLine.match(/behind (\d+)/);
+          ahead = a ? parseInt(a[1], 10) : 0;
+          behind = b ? parseInt(b[1], 10) : 0;
+          continue;
+        }
+
+        // porcelain format: XY <path>
+        const match = line.match(/^([ MADRCU?!]{2})\s+(.*)$/);
+        if (!match) continue;
+        const xy = match[1];
+        const filePath = match[2].trim();
+        const indexChar = xy[0];
+        const workChar = xy[1];
         let statusCode = 'M';
         let staged = false;
 
-        const indexStatus = file.index;
-        const workingDirStatus = file.working_dir;
-
-        if (indexStatus === '?' || workingDirStatus === '?') {
+        if (indexChar === '?' || workChar === '?') {
           statusCode = '?';
           staged = false;
-        } else if (indexStatus === 'A') {
+        } else if (indexChar === 'A' || workChar === 'A') {
           statusCode = 'A';
-          staged = true;
-        } else if (workingDirStatus === 'A') {
-          statusCode = 'A';
-          staged = false;
-        } else if (indexStatus === 'D') {
+          staged = indexChar === 'A';
+        } else if (indexChar === 'D' || workChar === 'D') {
           statusCode = 'D';
-          staged = true;
-        } else if (workingDirStatus === 'D') {
-          statusCode = 'D';
-          staged = false;
-        } else if (indexStatus === 'R') {
+          staged = indexChar === 'D';
+        } else if (indexChar === 'R') {
           statusCode = 'R';
           staged = true;
-        } else if (indexStatus === 'M') {
+        } else if (indexChar === 'M' || workChar === 'M') {
           statusCode = 'M';
-          staged = true;
-        } else if (workingDirStatus === 'M') {
-          statusCode = 'M';
-          staged = false;
+          staged = indexChar === 'M';
         }
 
         files.push({
-          path: file.path,
+          path: filePath,
           status: statusCode,
           staged,
-          indexStatus,
-          workingDirStatus
+          indexStatus: indexChar,
+          workingDirStatus: workChar
         });
       }
 
       return {
-        currentBranch: status.current || 'HEAD',
-        tracking: status.tracking,
-        ahead: status.ahead,
-        behind: status.behind,
-        isClean: status.isClean(),
+        currentBranch: current,
+        tracking,
+        ahead,
+        behind,
+        isClean: files.length === 0,
         files
       };
     } catch (err) {
-      return {
-        currentBranch: 'HEAD',
-        tracking: null,
-        ahead: 0,
-        behind: 0,
-        isClean: true,
-        files: []
-      };
+      return { currentBranch: 'HEAD', tracking: null, ahead: 0, behind: 0, isClean: true, files: [] };
     }
   }
 
   async getFileDiff(filepath, staged = false) {
-    try {
-      const options = [];
-      if (staged) {
-        options.push('--cached');
-      }
-      options.push('--', filepath);
-      const diff = await this.git.diff(options);
-      return diff || '(No changes)';
-    } catch (err) {
-      return `Error generating diff: ${err.message}`;
-    }
+    const args = ['diff'];
+    if (staged) args.push('--cached');
+    args.push('--', filepath);
+    const r = runGit(this.repoPath, args);
+    if (r.status !== 0) return `Error generating diff: ${r.stderr}`;
+    return r.stdout || '(No changes)';
   }
 
   async getFileContentAtCommit(commitHash, filepath) {
-    try {
-      return await this.git.show([`${commitHash}:${filepath}`]);
-    } catch (err) {
-      return null;
-    }
+    const r = runGit(this.repoPath, ['show', `${commitHash}:${filepath}`]);
+    if (r.status !== 0) return null;
+    return r.stdout;
   }
 
   async stageFile(filepath) {
-    await this.git.add(filepath);
+    runGit(this.repoPath, ['add', filepath]);
   }
 
   async unstageFile(filepath) {
-    await this.git.reset(['HEAD', '--', filepath]);
+    runGit(this.repoPath, ['reset', 'HEAD', '--', filepath]);
   }
 
   async stageAll() {
-    await this.git.add('.');
+    runGit(this.repoPath, ['add', '.']);
   }
 
   async unstageAll() {
-    await this.git.reset(['HEAD']);
+    runGit(this.repoPath, ['reset', 'HEAD']);
   }
 
   async discardFileChanges(filepath, isUntracked = false) {
     if (isUntracked) {
       const fullPath = path.join(this.repoPath, filepath);
       if (fs.existsSync(fullPath)) {
-        if (fs.statSync(fullPath).isDirectory()) {
-          fs.rmSync(fullPath, { recursive: true, force: true });
-        } else {
-          fs.unlinkSync(fullPath);
-        }
+        if (fs.statSync(fullPath).isDirectory()) fs.rmSync(fullPath, { recursive: true, force: true });
+        else fs.unlinkSync(fullPath);
       }
-    } else {
-      await this.git.checkout(['--', filepath]);
+      return;
     }
+    runGit(this.repoPath, ['checkout', '--', filepath]);
   }
 
   async undoChanges(filepath, isUntracked = false) {
     const fullPath = path.join(this.repoPath, filepath);
-
     if (isUntracked) {
       if (fs.existsSync(fullPath)) {
-        if (fs.statSync(fullPath).isDirectory()) {
-          fs.rmSync(fullPath, { recursive: true, force: true });
-        } else {
-          fs.unlinkSync(fullPath);
-        }
+        if (fs.statSync(fullPath).isDirectory()) fs.rmSync(fullPath, { recursive: true, force: true });
+        else fs.unlinkSync(fullPath);
       }
       return;
     }
 
-    // If staged, unstage first so the working tree can be restored from HEAD.
-    try {
-      await this.git.reset(['HEAD', '--', filepath]);
-    } catch {}
+    // unstage
+    runGit(this.repoPath, ['reset', 'HEAD', '--', filepath]);
+    // restore from HEAD
+    const r = runGit(this.repoPath, ['checkout', 'HEAD', '--', filepath]);
+    if (r.status === 0) return;
 
-    // File tracked in HEAD: restore it from HEAD (discards staged + unstaged edits).
-    try {
-      await this.git.checkout(['HEAD', '--', filepath]);
-      return;
-    } catch {}
-
-    // File not present in HEAD (e.g. newly added): remove it from the working tree.
     if (fs.existsSync(fullPath)) {
-      if (fs.statSync(fullPath).isDirectory()) {
-        fs.rmSync(fullPath, { recursive: true, force: true });
-      } else {
-        fs.unlinkSync(fullPath);
-      }
+      if (fs.statSync(fullPath).isDirectory()) fs.rmSync(fullPath, { recursive: true, force: true });
+      else fs.unlinkSync(fullPath);
     }
   }
 
   async commit(summary, description = '') {
-    if (!summary || !summary.trim()) {
-      throw new Error('Commit summary is required');
-    }
-    const message = description.trim() 
-      ? `${summary.trim()}\n\n${description.trim()}`
-      : summary.trim();
-
-    return await this.git.commit(message);
+    if (!summary || !summary.trim()) throw new Error('Commit summary is required');
+    const message = description.trim() ? `${summary.trim()}\n\n${description.trim()}` : summary.trim();
+    const r = runGit(this.repoPath, ['commit', '-m', message]);
+    if (r.status !== 0) throw new Error(r.stderr || 'git commit failed');
+    return r.stdout;
   }
 
   async getCommitHistory(limit = 50) {
-    try {
-      const log = await this.git.log({ maxCount: limit });
-      return log.all.map(commit => ({
-        hash: commit.hash,
-        shortHash: commit.hash.slice(0, 7),
-        author: commit.author_name,
-        email: commit.author_email,
-        date: commit.date,
-        message: commit.message,
-        summary: commit.message.split('\n')[0],
-        refs: commit.refs
-      }));
-    } catch {
-      return [];
-    }
+    const fmt = ['%H','%an','%ae','%ad','%s'].join('%x1f');
+    const r = runGit(this.repoPath, ['log', `-n`, String(limit), `--pretty=format:${fmt}`]);
+    if (r.status !== 0) return [];
+    const lines = (r.stdout || '').split('\n').filter(Boolean);
+    return lines.map(line => {
+      const parts = line.split('\x1f');
+      const hash = parts[0] || '';
+      const message = parts[4] || '';
+      return {
+        hash,
+        shortHash: hash.slice(0,7),
+        author: parts[1] || '',
+        email: parts[2] || '',
+        date: parts[3] || '',
+        message,
+        summary: message.split('\n')[0]
+      };
+    });
   }
 
   async getCommitDetails(hash) {
-    try {
-      const showResult = await this.git.show([
-        '--stat',
-        '--patch',
-        '--format=FULL_HEADER%n%H%n%an%n%ae%n%ad%n%B%nEND_HEADER',
-        hash
-      ]);
-
-      const parts = showResult.split('END_HEADER');
-      const headerPart = parts[0] || '';
-      const diffPart = parts.slice(1).join('END_HEADER') || '';
-
-      const lines = headerPart.split('\n');
-      const commitHash = lines[1] || hash;
-      const author = lines[2] || '';
-      const email = lines[3] || '';
-      const date = lines[4] || '';
-      const message = lines.slice(5).join('\n').trim();
-
-      return {
-        hash: commitHash,
-        shortHash: commitHash.slice(0, 7),
-        author,
-        email,
-        date,
-        message,
-        patch: diffPart.trim() || '(No diff content)'
-      };
-    } catch (err) {
-      return {
-        hash,
-        shortHash: hash.slice(0, 7),
-        author: 'Unknown',
-        email: '',
-        date: '',
-        message: 'Could not load commit details',
-        patch: err.message
-      };
-    }
+    const r = runGit(this.repoPath, ['show', '--stat', '--patch', '--format=FULL', hash]);
+    if (r.status !== 0) return { hash, shortHash: hash.slice(0,7), author: 'Unknown', email: '', date: '', message: 'Could not load commit details', patch: r.stderr };
+    // Best-effort parse: return raw output in patch
+    return { hash, shortHash: hash.slice(0,7), author: '', email: '', date: '', message: '', patch: r.stdout };
   }
 
   async getBranches() {
-    try {
-      const summary = await this.git.branch(['-a']);
-      const local = [];
-      const remote = [];
-
-      for (const name of summary.all) {
-        const isCurrent = name === summary.current;
-        const isRemote = name.startsWith('remotes/');
-        const branchObj = {
-          name,
-          displayName: isRemote ? name.replace('remotes/', '') : name,
-          current: isCurrent,
-          isRemote
-        };
-
-        if (isRemote) {
-          remote.push(branchObj);
-        } else {
-          local.push(branchObj);
-        }
-      }
-
-      return {
-        current: summary.current,
-        local,
-        remote,
-        branches: [...local, ...remote]
-      };
-    } catch (err) {
-      return { current: 'HEAD', local: [], remote: [], branches: [] };
+    const rCurrent = runGit(this.repoPath, ['rev-parse', '--abbrev-ref', 'HEAD']);
+    const current = rCurrent.status === 0 ? (rCurrent.stdout || '').trim() : 'HEAD';
+    const r = runGit(this.repoPath, ['branch', '-a', '--format', '%(refname:short)']);
+    if (r.status !== 0) return { current, local: [], remote: [], branches: [] };
+    const all = (r.stdout || '').split('\n').filter(Boolean);
+    const local = [];
+    const remote = [];
+    for (const name of all) {
+      const isRemote = name.startsWith('remotes/');
+      const displayName = isRemote ? name.replace('remotes/', '') : name;
+      const obj = { name, displayName, current: name === current, isRemote };
+      if (isRemote) remote.push(obj); else local.push(obj);
     }
+    return { current, local, remote, branches: [...local, ...remote] };
   }
 
   async checkoutBranch(branchName) {
-    await this.git.checkout(branchName);
+    const r = runGit(this.repoPath, ['checkout', branchName]);
+    if (r.status !== 0) throw new Error(r.stderr || 'git checkout failed');
   }
 
-  // Backwards-compatible alias used by UI code (BranchesView expects gitService.checkout)
   async checkout(branchName) {
     return this.checkoutBranch(branchName);
   }
 
   async createBranch(branchName, checkout = true) {
-    if (checkout) {
-      await this.git.checkoutLocalBranch(branchName);
-    } else {
-      await this.git.branch([branchName]);
-    }
+    if (checkout) runGit(this.repoPath, ['checkout', '-b', branchName]);
+    else runGit(this.repoPath, ['branch', branchName]);
   }
 
   async deleteBranch(branchName, force = false) {
     const flag = force ? '-D' : '-d';
-    await this.git.branch([flag, branchName]);
+    runGit(this.repoPath, ['branch', flag, branchName]);
   }
 
   async getStashes() {
-    try {
-      const stashList = await this.git.stashList();
-      return stashList.all.map((item, idx) => ({
-        index: idx,
-        name: `stash@{${idx}}`,
-        hash: item.hash,
-        message: item.message,
-        date: item.date
-      }));
-    } catch {
-      return [];
-    }
+    const r = runGit(this.repoPath, ['stash', 'list']);
+    if (r.status !== 0) return [];
+    return (r.stdout || '').split('\n').filter(Boolean).map((line, idx) => ({ index: idx, name: `stash@{${idx}}`, hash: null, message: line }));
   }
 
   async createStash(message = '', includeUntracked = true) {
-    const args = ['save'];
+    const args = ['stash', 'push'];
     if (includeUntracked) args.push('--include-untracked');
-    if (message.trim()) args.push(message.trim());
-    await this.git.stash(args);
+    if (message.trim()) args.push('-m', message.trim());
+    runGit(this.repoPath, args);
   }
 
   async applyStash(index = 0) {
-    await this.git.stash(['apply', `stash@{${index}}`]);
+    runGit(this.repoPath, ['stash', 'apply', `stash@{${index}}`]);
   }
 
   async popStash(index = 0) {
-    await this.git.stash(['pop', `stash@{${index}}`]);
+    runGit(this.repoPath, ['stash', 'pop', `stash@{${index}}`]);
   }
 
   async dropStash(index = 0) {
-    await this.git.stash(['drop', `stash@{${index}}`]);
+    runGit(this.repoPath, ['stash', 'drop', `stash@{${index}}`]);
   }
 
   async push(force = false) {
-    try {
-      if (force) {
-        // Use force-with-lease for safer forced pushes
-        return await this.git.push(['--force-with-lease']);
-      }
-      return await this.git.push();
-    } catch (err) {
-      throw err;
-    }
+    if (force) return runGit(this.repoPath, ['push', '--force-with-lease']);
+    return runGit(this.repoPath, ['push']);
   }
 
   async pull(force = false) {
-    try {
-      if (!force) {
-        return await this.git.pull();
-      }
-
-      // Force pull: fetch and hard-reset the current branch to origin/<branch>
-      const status = await this.git.status();
-      const branch = status.current || 'HEAD';
-      await this.git.fetch();
-      await this.git.reset(['--hard', `origin/${branch}`]);
-      return;
-    } catch (err) {
-      throw err;
-    }
+    if (!force) return runGit(this.repoPath, ['pull']);
+    const s = await this.getStatus();
+    const branch = s.currentBranch || 'HEAD';
+    runGit(this.repoPath, ['fetch']);
+    return runGit(this.repoPath, ['reset', '--hard', `origin/${branch}`]);
   }
 
   async fetch() {
-    return await this.git.fetch();
+    return runGit(this.repoPath, ['fetch']);
   }
 }
