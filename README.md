@@ -172,3 +172,26 @@ Developed with ❤️ by **Jordi Serrano (`j0rd1s3rr4n0`)**.
 - **GitHub Profile**: [https://github.com/j0rd1s3rr4n0](https://github.com/j0rd1s3rr4n0)
 - **Bug Reports & Feature Requests**: [https://github.com/j0rd1s3rr4n0/git-desktop-tui/issues](https://github.com/j0rd1s3rr4n0/git-desktop-tui/issues)
 - **License**: Released under the [MIT License](LICENSE).
+
+---
+
+## ⚠️ Troubleshooting — Windows / WSL installer
+
+If running the one-line installer or `autoinstall.sh` from Windows (PowerShell/CMD) you may see errors like `command not found`, `syntax error`, or `EACCES` caused by CRLF line endings or permissions. Recommended steps:
+
+```bash
+# Convert CRLF -> LF (WSL or Linux):
+dos2unix autoinstall.sh
+# Or using sed:
+sed -i 's/\r$//' autoinstall.sh
+# Make executable and run from WSL/Ubuntu shell:
+chmod +x autoinstall.sh
+sudo ./autoinstall.sh
+```
+
+Notes:
+- Prefer cloning and running the installer inside WSL (Ubuntu) rather than running `curl | bash` from PowerShell.
+- The repo includes a `.gitattributes` file enforcing LF for `*.sh`; if you still get CRLF issues, check your Git core.autocrlf setting.
+- If you hit `npm EACCES` errors, clone the repo into your home directory and run the installer there (avoid running npm installs as root when possible).
+
+If issues persist, open an issue with your OS, shell, `node --version`, and the error output. We can add platform-specific fixes.
