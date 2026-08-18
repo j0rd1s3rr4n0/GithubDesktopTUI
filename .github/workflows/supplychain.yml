@@ -15,13 +15,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Ensure Git EOL normalization is disabled on runner
+        run: |
+          git config --global core.autocrlf false
+          git config --global core.eol lf
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
 
-      - name: Install dependencies
+      - name: Install dependencies (ci)
         run: npm ci
+
+      - name: Restore committed lockfile (prevent accidental modifications)
+        run: git checkout -- package-lock.json || true
 
       - name: Verify supplychain manifest
         run: node scripts/verify-supply-chain.mjs verify
